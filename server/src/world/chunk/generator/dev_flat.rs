@@ -13,23 +13,23 @@ pub struct DevFlatChunkGeneratorPlugin;
 
 impl Plugin for DevFlatChunkGeneratorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(WorldTick, (dev_flat_chunk_generator_system));
+        app.add_systems(WorldTick, dev_flat_chunk_generator_system);
     }
 }
 
 fn dev_flat_chunk_generator_system(
-    mut commands: Commands,
+    _commands: Commands,
     chunks_to_generate: Query<(Entity, &Chunk), With<ChunkGenerateErrand>>,
 ) {
     if chunks_to_generate.is_empty() {
         return;
     }
 
-    for (entity, chunk) in chunks_to_generate.iter() {
-        let block_data = if chunk.y <= 0 {
-            let block_data = BlockData::new(Some(Entity::from_raw(1)));
+    for (_entity, chunk) in chunks_to_generate.iter() {
+        let _block_data = if chunk.y <= 0 {
+            let _block_data = BlockData::new(Some(Entity::from_raw(1)));
 
-            let mut data = ChunkBlockData {
+            let data = ChunkBlockData {
                 blocks: Box::new(
                     [[[BlockData::default(); CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
                         CHUNK_SIZE as usize],

@@ -1,9 +1,9 @@
 use bevy::prelude::Component;
-use rand::Rng;
+
 use serde::{Deserialize, Serialize};
 
 use game2::CHUNK_SIZE;
-use game2::compressible::Compressible;
+
 
 use crate::world::block::BlockData;
 
@@ -17,7 +17,8 @@ pub struct ChunkBlockData {
 mod test {
     use std::mem::size_of;
     use bevy::prelude::Entity;
-    use game2::compressible::{Compressed, LZ4, ZSTD};
+    use rand::Rng;
+    use game2::compressible::{Compressed, Compressible, LZ4, ZSTD};
     use super::*;
 
 
