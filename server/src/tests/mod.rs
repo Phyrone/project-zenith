@@ -4,13 +4,10 @@ use deno_core::{
 };
 use std::rc::Rc;
 
-#[cfg(test)]
 #[test]
 fn test1() {
-    let app = App::new();
+    let _app = App::new();
 }
-
-#[cfg(test)]
 
 #[tokio::test]
 async fn test_deno() {

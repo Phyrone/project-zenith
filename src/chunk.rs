@@ -24,10 +24,13 @@ pub struct ChunkStorage<Block: Debug + Clone + Eq + Ord> {
 }
 
 impl<Block> ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash + Default,
+    where
+        Block: Debug + Clone + Ord + Eq + Hash + Default,
 {
+
     pub fn empty() -> Self {
+        let mut packed = packedvec::PackedVec::new(vec![1]);
+
         Self {
             palette: vec![Block::default()],
             grid: [0; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE],
@@ -41,8 +44,8 @@ where
 }
 
 impl<Block> Default for ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash + Default,
+    where
+        Block: Debug + Clone + Ord + Eq + Hash + Default,
 {
     fn default() -> Self {
         Self::empty()
@@ -50,8 +53,8 @@ where
 }
 
 impl<Block> From<BlockArray<Block>> for ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash,
+    where
+        Block: Debug + Clone + Ord + Eq + Hash,
 {
     fn from(array: BlockArray<Block>) -> Self {
         return Self::new(&array);
@@ -59,8 +62,8 @@ where
 }
 
 impl<Block> ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash,
+    where
+        Block: Debug + Clone + Ord + Eq + Hash,
 {
     fn new(blocks: &BlockArray<Block>) -> Self {
         let mut middle: HashMap<Block, Vec<usize>> = HashMap::default();
@@ -89,6 +92,8 @@ where
 
         Self { palette, grid }
     }
+
+
     pub fn contains(&self, block: &Block) -> bool {
         self.palette.binary_search(block).is_ok()
     }
@@ -114,12 +119,12 @@ where
             panic!("index out of bounds");
         }
 
-        let former_index =
+        let former_pointer =
             self.grid[x as usize + y as usize * CHUNK_SIZE + z as usize * CHUNK_SIZE * CHUNK_SIZE];
         let index = self.get_or_create_index(block);
         self.grid[x as usize + y as usize * CHUNK_SIZE + z as usize * CHUNK_SIZE * CHUNK_SIZE] =
             index;
-        self.remove_if_unused(former_index);
+        self.remove_if_unused(former_pointer);
     }
 
     pub fn set_many(
@@ -140,13 +145,13 @@ where
         for x in range_x {
             for y in range_y.clone() {
                 for z in range_z.clone() {
-                    let former_index = self.grid[x as usize
+                    let former_pointer = self.grid[x as usize
                         + y as usize * CHUNK_SIZE
                         + z as usize * CHUNK_SIZE * CHUNK_SIZE];
                     self.grid[x as usize
                         + y as usize * CHUNK_SIZE
                         + z as usize * CHUNK_SIZE * CHUNK_SIZE] = index;
-                    self.remove_if_unused(former_index);
+                    self.remove_if_unused(former_pointer);
                 }
             }
         }
@@ -161,43 +166,65 @@ where
     }
 
     ///looks if the any block in the grid point to the index and if not removes it from the palette
-    fn remove_if_unused(&mut self, index: u16) {
-        let can_be_removed = self.grid.par_iter().any(|block| *block != index).not();
+    fn remove_if_unused(&mut self, pointer: u16) {
+        let can_be_removed = self.grid.par_iter().any(|block| *block != pointer).not();
         if can_be_removed {
-            self.palette.remove(index as usize);
-            self.pallete_index_removed(index);
+            self.palette.remove(pointer as usize);
+            self.pallete_index_removed(pointer);
         }
     }
 
-    fn pallete_index_inserted(&mut self, index: u16) {
+    fn pallete_index_inserted(&mut self, pointer: u16) {
         //increment all indices that are greater or eq than index by 1 to make them not point to the wrong block
         self.grid.par_iter_mut().for_each(|block| {
-            if *block >= index {
+            if *block >= pointer {
                 *block += 1;
             }
         });
     }
-    fn pallete_index_removed(&mut self, index: u16) {
+    fn pallete_index_removed(&mut self, pointer: u16) {
         //decrement all indices that are greater than index by 1 to make them not point to the wrong block
         self.grid.par_iter_mut().for_each(|block| {
-            if *block > index {
+            if *block > pointer {
                 *block -= 1;
             }
         });
     }
+
+    pub fn iter(&self) -> impl Iterator<Item=Block> + '_ {
+        self.grid
+            .iter()
+            .map(|index| self.palette[*index as usize].clone())
+    }
+
+    pub fn export_seq(&self) -> Box<BlockArray<Block>> {
+        let vec = self
+            .grid
+            .iter()
+            .map(|index| self.palette[*index as usize].clone())
+            .collect_vec();
+        let attempt: [Block; CHUNK_VOLUME] = vec.try_into().unwrap();
+        Box::new(attempt)
+    }
 }
 
 impl<Block> ChunkStorage<Block>
-where
-    Block: Debug + Clone + Eq + Ord + Send + Sync,
+    where
+        Block: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
-    pub fn unpack(&self) -> Box<[Block; CHUNK_VOLUME]> {
-        let slice = self
-            .grid
+    pub fn export(&self) -> Box<BlockArray<Block>> {
+        let mut vec = Vec::with_capacity(CHUNK_VOLUME);
+        self.grid
             .par_iter()
             .map(|index| self.palette[*index as usize].clone())
-            .collect::<Vec<Block>>();
-        let attempt: [Block; CHUNK_VOLUME] = slice.try_into().unwrap();
+            .collect_into_vec(&mut vec);
+        let attempt: [Block; CHUNK_VOLUME] = vec.try_into().unwrap();
         Box::new(attempt)
+    }
+
+    pub fn par_iter(&self) -> impl ParallelIterator<Item=Block> + '_ {
+        self.grid
+            .par_iter()
+            .map(|index| self.palette[*index as usize].clone())
     }
 }

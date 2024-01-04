@@ -6,9 +6,10 @@ use bevy::render::render_resource::VertexFormat;
 use crate::world::camera::WorldCameraPlugin;
 use crate::world::chunk::ClientWorldChunksPlugin;
 
-mod block_data;
-mod camera;
-mod chunk;
+pub mod block_data;
+pub mod camera;
+pub mod chunk;
+pub mod material;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldPlugin;

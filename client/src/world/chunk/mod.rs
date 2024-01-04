@@ -1,13 +1,13 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use bevy::ecs::schedule::ScheduleLabel;
 use bevy::prelude::{App, Component, Plugin, SystemSet};
 
 pub mod chunk_data;
 pub mod chunk_mesh;
 pub mod grid;
-mod voxel;
+pub mod voxel;
+mod voxel2;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldChunksPlugin;

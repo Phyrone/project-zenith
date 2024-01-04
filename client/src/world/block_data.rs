@@ -3,8 +3,19 @@ use slab::Slab;
 
 use game2::BlockRotation;
 
-#[derive(Clone, Copy, Debug, Component, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Component,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub struct ClientBlockState {
     pub material: usize,
     pub rotation: BlockRotation,
@@ -21,16 +32,16 @@ pub struct MaterialRegistry {
 }
 
 #[derive(
-Clone,
-Copy,
-Debug,
-Component,
-Eq,
-PartialEq,
-Ord,
-PartialOrd,
-serde::Serialize,
-serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Component,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 pub struct BlockMaterial {
     pub transparent: bool,

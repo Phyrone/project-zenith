@@ -4,6 +4,8 @@ use bevy::prelude::*;
 
 pub mod chunk;
 pub mod compressible;
+pub mod humanize;
+pub mod material;
 
 pub const CHUNK_SIZE: usize = 32;
 
@@ -49,18 +51,18 @@ where
 #[repr(u8)]
 pub enum AxialRotation {
     Zero = 0,
-    One = 1,
-    Two = 2,
-    Three = 3,
+    By90 = 1,
+    By180 = 2,
+    By270 = 3,
 }
 
 impl AxialRotation {
     fn from_index(index: u32) -> AxialRotation {
         match index {
             0 => AxialRotation::Zero,
-            1 => AxialRotation::One,
-            2 => AxialRotation::Two,
-            3 => AxialRotation::Three,
+            1 => AxialRotation::By90,
+            2 => AxialRotation::By180,
+            3 => AxialRotation::By270,
             _ => panic!("there is no axial rotation with index {}", index),
         }
     }
@@ -68,37 +70,37 @@ impl AxialRotation {
     fn to_index(&self) -> u32 {
         match self {
             AxialRotation::Zero => 0,
-            AxialRotation::One => 1,
-            AxialRotation::Two => 2,
-            AxialRotation::Three => 3,
+            AxialRotation::By90 => 1,
+            AxialRotation::By180 => 2,
+            AxialRotation::By270 => 3,
         }
     }
 
     fn flip(&self) -> AxialRotation {
         match self {
             AxialRotation::Zero => AxialRotation::Zero,
-            AxialRotation::One => AxialRotation::Three,
-            AxialRotation::Two => AxialRotation::Two,
-            AxialRotation::Three => AxialRotation::One,
+            AxialRotation::By90 => AxialRotation::By270,
+            AxialRotation::By180 => AxialRotation::By180,
+            AxialRotation::By270 => AxialRotation::By90,
         }
     }
 
     fn clockwise(&self) -> AxialRotation {
         //likely faster than using 'index + 1 % 4'
         match self {
-            AxialRotation::Zero => AxialRotation::One,
-            AxialRotation::One => AxialRotation::Two,
-            AxialRotation::Two => AxialRotation::Three,
-            AxialRotation::Three => AxialRotation::Zero,
+            AxialRotation::Zero => AxialRotation::By90,
+            AxialRotation::By90 => AxialRotation::By180,
+            AxialRotation::By180 => AxialRotation::By270,
+            AxialRotation::By270 => AxialRotation::Zero,
         }
     }
     fn counter_clockwise(&self) -> AxialRotation {
         //likely faster than using 'index + 3 % 4'
         match self {
-            AxialRotation::Zero => AxialRotation::Three,
-            AxialRotation::One => AxialRotation::Zero,
-            AxialRotation::Two => AxialRotation::One,
-            AxialRotation::Three => AxialRotation::Two,
+            AxialRotation::Zero => AxialRotation::By270,
+            AxialRotation::By90 => AxialRotation::Zero,
+            AxialRotation::By180 => AxialRotation::By90,
+            AxialRotation::By270 => AxialRotation::By180,
         }
     }
 }
@@ -109,10 +111,10 @@ impl AxialRotation {
 pub enum Face {
     Top = FACE_TOP as u8,
     Bottom = FACE_BOTTOM as u8,
-    Left = FACE_LEFT as u8,
-    Right = FACE_RIGHT as u8,
-    Front = FACE_FRONT as u8,
-    Back = FACE_BACK as u8,
+    East = FACE_EAST as u8,
+    West = FACE_WEST as u8,
+    North = FACE_NORTH as u8,
+    South = FACE_SOUTH as u8,
 }
 
 impl Face {
@@ -120,20 +122,20 @@ impl Face {
         match self {
             Face::Top => FACE_TOP,
             Face::Bottom => FACE_BOTTOM,
-            Face::Left => FACE_LEFT,
-            Face::Right => FACE_RIGHT,
-            Face::Front => FACE_FRONT,
-            Face::Back => FACE_BACK,
+            Face::East => FACE_EAST,
+            Face::West => FACE_WEST,
+            Face::North => FACE_NORTH,
+            Face::South => FACE_SOUTH,
         }
     }
     fn get_opposite_face(&self) -> Face {
         match self {
             Face::Top => Face::Bottom,
             Face::Bottom => Face::Top,
-            Face::Left => Face::Right,
-            Face::Right => Face::Left,
-            Face::Front => Face::Back,
-            Face::Back => Face::Front,
+            Face::East => Face::West,
+            Face::West => Face::East,
+            Face::North => Face::South,
+            Face::South => Face::North,
         }
     }
 
@@ -141,10 +143,10 @@ impl Face {
         match index {
             FACE_TOP => Face::Top,
             FACE_BOTTOM => Face::Bottom,
-            FACE_LEFT => Face::Left,
-            FACE_RIGHT => Face::Right,
-            FACE_FRONT => Face::Front,
-            FACE_BACK => Face::Back,
+            FACE_EAST => Face::East,
+            FACE_WEST => Face::West,
+            FACE_NORTH => Face::North,
+            FACE_SOUTH => Face::South,
             _ => panic!("there is no face with index {}", index),
         }
     }
@@ -153,10 +155,10 @@ impl Face {
         match index {
             FACE_TOP => FACE_BOTTOM,
             FACE_BOTTOM => FACE_TOP,
-            FACE_LEFT => FACE_RIGHT,
-            FACE_RIGHT => FACE_LEFT,
-            FACE_FRONT => FACE_BACK,
-            FACE_BACK => FACE_FRONT,
+            FACE_EAST => FACE_WEST,
+            FACE_WEST => FACE_EAST,
+            FACE_NORTH => FACE_SOUTH,
+            FACE_SOUTH => FACE_NORTH,
             _ => panic!("there is no face with index {}", index),
         }
     }
@@ -164,19 +166,26 @@ impl Face {
 
 pub const FACE_TOP: u32 = 0;
 pub const FACE_BOTTOM: u32 = 1;
-pub const FACE_LEFT: u32 = 2;
-pub const FACE_RIGHT: u32 = 3;
-pub const FACE_FRONT: u32 = 4;
-pub const FACE_BACK: u32 = 5;
+pub const FACE_EAST: u32 = 2;
+pub const FACE_WEST: u32 = 3;
+pub const FACE_NORTH: u32 = 4;
+pub const FACE_SOUTH: u32 = 5;
 
 //TODO store mirroring bits
-/// stores the rotation of a block or block-like object. it only needs a single byte because there are only 6 faces and 4 axial rotations.
-/// and so 6* 4 = 24 possible combinations. 24 < 256
-/// the first 3 bits are used to store the face and the next 2 bits are used to store the axial rotation.
-/// the remaining 3 bits are unused yet. but might be used to store mirroring information in the future.
-///
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Component)]
-#[derive(serde::Serialize, serde::Deserialize)]
+/// represents all possible rottations of a block in a single byte
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Component,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub struct BlockRotation(u8);
 
 impl Default for BlockRotation {

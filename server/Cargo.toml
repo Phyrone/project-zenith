@@ -9,24 +9,23 @@ edition = "2021"
 serde = { version = "1.0.193", features = ["derive", "alloc", "rc"] }
 game2 = { path = ".." }
 uuid = { version = "1.6.1", features = ["v4", "serde", "wasm-bindgen", "getrandom"] }
-deno_core = "0.239.0"
-tokio = { version = "1.34.0", features = ["full"] }
+deno_core = "0.240.0"
+tokio = { version = "1.35.1", features = ["full"] }
 bincode = { version = "1.3.3", features = ["i128"] }
-async-trait = "0.1.75"
+async-trait = "0.1.77"
 lz4_flex = "0.11.1"
 bimap = { version = "0.6.3", features = ["serde"] }
 zstd = { version = "0.13.0", features = ["wasm", "bindgen"] }
-moka = { version = "0.12.1", features = ["log", "future", "async-lock", "async-trait", "js"] }
+moka = { version = "0.12.2", features = ["log", "future", "async-lock", "async-trait", "js"] }
 rayon = "1.8.0"
 rand = { version = "0.8.5", features = ["log", "serde"] }
 opensimplex2 = "1.0.1"
 wtransport = "0.1.10"
 
 [dependencies.bevy]
-version = "0.12.0"
+version = "0.12.1"
 default-features = false
 features = [
-    "android_shared_stdcxx",
     "multi-threaded",
     "async-io"
 ]
@@ -39,5 +38,10 @@ opt-level = 3
 
 [profile.release]
 opt-level = 3
-codegen-units = 1
 lto = true
+codegen-units = 1
+
+[profile.bench]
+opt-level = 3
+lto = true
+codegen-units = 1

@@ -1,4 +1,3 @@
-use bevy::a11y::accesskit::Role::WebView;
 use bevy::app::{App, Startup};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::math::Vec3;
@@ -16,7 +15,8 @@ use crate::startup::{init_logger, ClientStartupError, StartupParams};
 use crate::world::ClientWorldPlugin;
 
 mod startup;
-mod world;
+pub mod utils;
+pub mod world;
 
 fn main() -> Result<(), Report<ClientStartupError>> {
     let params = StartupParams::parse();
