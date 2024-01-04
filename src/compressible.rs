@@ -23,6 +23,12 @@ where
     pub fn len_compressed(&self) -> usize {
         self.data.len()
     }
+
+    pub fn memory_usage(&self) -> usize {
+        let struct_size = std::mem::size_of::<Self>();
+        let data_size = self.data.capacity();
+        struct_size + data_size
+    }
 }
 
 pub struct LZ4;
@@ -136,7 +142,7 @@ where
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use serde::Deserialize;
     use serde::Serialize;
 

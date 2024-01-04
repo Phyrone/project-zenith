@@ -6,6 +6,7 @@ pub mod chunk;
 pub mod compressible;
 pub mod humanize;
 pub mod material;
+mod storage;
 
 pub const CHUNK_SIZE: usize = 32;
 

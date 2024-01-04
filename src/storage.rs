@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
-use std::ops::Not;
+use std::ops::{Not, Range};
 
 use bevy::prelude::Component;
 use itertools::Itertools;
@@ -9,73 +9,70 @@ use rayon::prelude::*;
 
 use crate::{CHUNK_SIZE, CHUNK_VOLUME};
 
-fn empty_grid() -> PackedVec<usize> {
-    PackedVec::new(vec![0; CHUNK_VOLUME])
-}
-
 type BlockArray<Block> = [Block; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Component, serde::Serialize, serde::Deserialize)]
 //TODO add serde
 /// stores a matrix of blocks (thats its orginal intention but you can also store other things)
 /// this storage works the best when there are many identical objects and there are more reads than writes
-pub struct ChunkStorage<Block: Debug + Clone + Eq + Ord + Send + Sync> {
+pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Sync> {
     //a ordered list of all blocks (including blockstates)
     //TODO maybe replace with smallvec (find a suitable size)
-    palette: Vec<Block>,
+    palette: Vec<ITEM>,
 
     //2 bytes are sufficient as the amount of different block-(states) is limited to max 32^3 = 32768
     grid: PackedVec<usize>,
 }
 
-impl<Block> ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
+    fn empty_grid() -> PackedVec<usize> {
+        PackedVec::new(vec![0; SIZE * SIZE * SIZE])
+    }
     pub fn empty() -> Self {
         Self {
-            palette: vec![Block::default()],
-            grid: empty_grid(),
+            palette: vec![ITEM::default()],
+            grid: Self::empty_grid(),
         }
     }
 
     pub fn clear(&mut self) {
-        self.palette = vec![Block::default()];
-        self.grid = empty_grid()
+        self.palette = vec![ITEM::default()];
+        self.grid = Self::empty_grid()
     }
 }
 
-impl<Block> Default for ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn default() -> Self {
         Self::empty()
     }
 }
 
-impl<Block> From<BlockArray<Block>> for ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
-    fn from(array: BlockArray<Block>) -> Self {
-        return Self::new(&array);
-    }
-}
+    pub fn new(blocks: &Vec<ITEM>) -> Self {
+        if blocks.len() != LIMIT {
+            panic!("invalid block array size (must be {})", LIMIT);
+        }
 
-impl<Block> ChunkStorage<Block>
-where
-    Block: Debug + Clone + Ord + Eq + Hash + Send + Sync,
-{
-    pub fn new(blocks: &BlockArray<Block>) -> Self {
-        let mut palette = Vec::from(blocks);
+
+        let mut palette = blocks.clone();
         palette.par_sort_unstable();
         palette.dedup();
         palette.shrink_to_fit();
+
         let grid = blocks
             .par_iter()
             .map(|block| palette.binary_search(block).unwrap())
             .collect::<Vec<usize>>();
+
         let packed_grid = PackedVec::new(grid);
         Self {
             palette,
@@ -83,36 +80,35 @@ where
         }
     }
 
-    pub fn contains(&self, block: &Block) -> bool {
+    pub fn contains(&self, block: &ITEM) -> bool {
         self.palette.binary_search(block).is_ok()
     }
 
-    pub fn get(&self, x: u32, y: u32, z: u32) -> &Block {
-        if x >= CHUNK_SIZE as u32 || y >= CHUNK_SIZE as u32 || z >= CHUNK_SIZE as u32 {
+    pub fn get(&self, i: usize) -> &ITEM {
+
+        let item = self.grid.get(i);
+        if let Some(item) = item {
+            return self.palette.get(item).unwrap();
+        } else {
             panic!("index out of bounds");
         }
-        let index = x as usize + y as usize * CHUNK_SIZE + z as usize * CHUNK_SIZE * CHUNK_SIZE;
-        //bounds where already checked above
-        let block = unsafe { self.grid.get_unchecked(index) };
-        self.palette.get(block).unwrap()
     }
 
     ///returns an array of all block-(states) in the chunk
     /// the array is ordered
-    pub fn blocks(&self) -> &[Block] {
+    pub fn blocks(&self) -> &[ITEM] {
         &self.palette
     }
 
-    pub fn set(&mut self, x: u32, y: u32, z: u32, block: Block) {
-        if x >= CHUNK_SIZE as u32 || y >= CHUNK_SIZE as u32 || z >= CHUNK_SIZE as u32 {
+    pub fn set(&mut self, i: usize, block: ITEM) {
+        if i >= LIMIT {
             panic!("index out of bounds");
         }
-        let index = x as usize + y as usize * CHUNK_SIZE + z as usize * CHUNK_SIZE * CHUNK_SIZE;
 
-        let former_palette_id = unsafe { self.grid.get_unchecked(index) };
+        let former_palette_id = unsafe { self.grid.get_unchecked(i) };
         let mut unpacked = self.grid.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
-        unpacked[index] = palette_id;
+        unpacked[i] = palette_id;
 
         self.remove_if_unused(former_palette_id, &mut unpacked);
         self.grid = PackedVec::new(unpacked);
@@ -120,37 +116,28 @@ where
 
     pub fn set_many(
         &mut self,
-        range_x: std::ops::Range<u32>,
-        range_y: std::ops::Range<u32>,
-        range_z: std::ops::Range<u32>,
-        block: Block,
+        range: Range<usize>,
+        block: ITEM,
     ) {
-        if range_x.end > CHUNK_SIZE as u32
-            || range_y.end > CHUNK_SIZE as u32
-            || range_z.end > CHUNK_SIZE as u32
-        {
+        if range.end > LIMIT  || range.start > LIMIT  {
             panic!("index out of bounds");
         }
 
         let mut unpacked = self.grid.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
 
-        //create cartesian product of all indices
-        let all_ranges = range_x.cartesian_product(range_y.cartesian_product(range_z));
 
         //TODO try parallelizing
-        for (x, (y, z)) in all_ranges {
-            let former_palette_id = unpacked
-                [x as usize + y as usize * CHUNK_SIZE + z as usize * CHUNK_SIZE * CHUNK_SIZE];
-            unpacked[x as usize + y as usize * CHUNK_SIZE + z as usize * CHUNK_SIZE * CHUNK_SIZE] =
-                palette_id;
+        for i in range {
+            let former_palette_id = unpacked[i];
+            unpacked[i] = palette_id;
             self.remove_if_unused(former_palette_id, &mut unpacked);
         }
 
         self.grid = PackedVec::new(unpacked);
     }
 
-    fn get_or_create_pallete_id(&mut self, block: Block, unpacked: &mut Vec<usize>) -> usize {
+    fn get_or_create_pallete_id(&mut self, block: ITEM, unpacked: &mut Vec<usize>) -> usize {
         self.palette.binary_search(&block).unwrap_or_else(|index| {
             self.palette.insert(index, block);
             Self::pallete_id_inserted(index, unpacked);
@@ -210,97 +197,32 @@ where
         });
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Block> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item=&ITEM> + '_ {
         self.grid
             .iter()
             .map(|palette_id| self.palette.get(palette_id).unwrap())
     }
 
     ///returns the estimated memory usage in bytes of the chunk including overhead
-    /// when [Block] contains pointers/references only the size of the pointers/references will taken into account
+    /// when [ITEM] contains pointers/references only the size of the pointers/references will taken into account
     pub fn memory_usage(&self) -> usize {
         let struct_size = std::mem::size_of::<Self>();
-        let palette_size = self.palette.capacity() * std::mem::size_of::<Block>();
+        let palette_size = self.palette.capacity() * std::mem::size_of::<ITEM>();
         let grid_size = (self.grid.len() * self.grid.bwidth()) / 8;
         struct_size + palette_size + grid_size
     }
 
-    pub fn export(&self) -> Box<BlockArray<Block>> {
+    pub fn export(&self) -> Box<BlockArray<ITEM>> {
         let vec = self.par_iter().cloned().collect::<Vec<_>>();
 
-        let attempt: [Block; CHUNK_VOLUME] = vec.try_into().unwrap();
+        let attempt: [ITEM; CHUNK_VOLUME] = vec.try_into().unwrap();
         Box::new(attempt)
     }
 
-    pub fn par_iter(&self) -> impl ParallelIterator<Item = &Block> + '_ {
+    pub fn par_iter(&self) -> impl ParallelIterator<Item=&ITEM> + '_ {
         self.grid
             .iter()
             .par_bridge()
             .map(|palette_id| self.palette.get(palette_id).unwrap())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::compressible::Compressible;
-    use crate::humanize::humanize_memory;
-
-    use super::*;
-
-    #[derive(
-        Debug,
-        Default,
-        Clone,
-        Copy,
-        Eq,
-        PartialEq,
-        Ord,
-        PartialOrd,
-        Hash,
-        serde::Serialize,
-        serde::Deserialize,
-    )]
-    struct TestBlock(usize);
-
-    type TestChunkStorage = ChunkStorage<TestBlock>;
-
-    fn create_sample_blocks(block_count: usize) -> Box<[TestBlock; CHUNK_VOLUME]> {
-        let mut input_data = Box::new([TestBlock::default(); CHUNK_VOLUME]);
-
-        //create some random data with about 200 different block ids
-        for i in 0..CHUNK_VOLUME {
-            let id = i % block_count;
-            input_data[i] = TestBlock(id);
-        }
-        input_data
-    }
-
-    #[test]
-    fn test_chunk_creation() {
-        const BLOCK_COUNT: usize = CHUNK_VOLUME;
-        let input_data = create_sample_blocks(BLOCK_COUNT);
-        let chunk_storage = TestChunkStorage::new(&input_data);
-        println!(
-            "memory usage: {}",
-            humanize_memory(chunk_storage.memory_usage())
-        );
-        println!(
-            "memory usage (lz4) {}",
-            humanize_memory(chunk_storage.compress_lz4().memory_usage())
-        );
-        println!(
-            "memory usage (snappy) {}",
-            humanize_memory(chunk_storage.compress_snappy().memory_usage())
-        );
-        println!(
-            "memory usage (zstd) {}",
-            humanize_memory(chunk_storage.compress_zstd().memory_usage())
-        );
-        println!(
-            "memory usage (zstd - best) {}",
-            humanize_memory(chunk_storage.compress_zstd_best().memory_usage())
-        );
-
-        assert_eq!(chunk_storage.blocks().len(), BLOCK_COUNT);
     }
 }

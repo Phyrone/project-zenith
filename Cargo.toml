@@ -28,6 +28,9 @@ zstd = { version = "0.13.0", features = ["wasm", "bindgen"] }
 version = "0.12.1"
 default-features = false
 
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["tokio", "html_reports"] }
+
 [workspace]
 members = [
     "client",
@@ -43,3 +46,8 @@ codegen-units = 1
 opt-level = 3
 lto = true
 codegen-units = 1
+
+[[bench]]
+name = "chunk"
+harness = false
+

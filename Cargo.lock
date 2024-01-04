@@ -1655,6 +1655,7 @@ dependencies = [
  "criterion",
  "crunch",
  "error-stack",
+ "fast-voxel-traversal",
  "fast_log",
  "game2",
  "log",
@@ -2334,6 +2335,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast-voxel-traversal"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2003f1327d3176d67115a159efc4704cc72f747ffce82779da8bc272a72b9350"
+dependencies = [
+ "glam 0.18.0",
+]
+
+[[package]]
 name = "fast_log"
 version = "1.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2613,6 +2623,7 @@ dependencies = [
  "bevy",
  "bincode",
  "bytemuck",
+ "criterion",
  "enumset",
  "itertools 0.12.0",
  "lz4_flex",
@@ -2691,6 +2702,12 @@ name = "gimli"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fb8d784f27acf97159b40fc4db5ecd8aa23b9ad5ef69cdd136d3bc80665f0c0"
+
+[[package]]
+name = "glam"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "525a3e490ba77b8e326fb67d4b44b4bd2f920f44d4cc73ccec50adc68e3bee34"
 
 [[package]]
 name = "glam"

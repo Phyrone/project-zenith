@@ -25,6 +25,7 @@ serde_json = "1.0.108"
 crunch = "0.5.3"
 wtransport = "0.1.10"
 array-init = "2.1.0"
+fast-voxel-traversal = "0.5.0"
 
 [profile.dev]
 opt-level = 1
