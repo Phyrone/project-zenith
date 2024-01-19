@@ -7,7 +7,7 @@ use itertools::Itertools;
 use packedvec::PackedVec;
 use rayon::prelude::*;
 
-use crate::{CHUNK_SIZE, CHUNK_VOLUME};
+use crate::CHUNK_SIZE;
 
 type BlockArray<Block> = [Block; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
@@ -25,12 +25,13 @@ pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Sy
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
-        PackedVec::new(vec![0; SIZE * SIZE * SIZE])
+        PackedVec::new(vec![0; SIZE])
     }
+
     pub fn empty() -> Self {
         Self {
             palette: vec![ITEM::default()],
@@ -45,8 +46,8 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
 }
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn default() -> Self {
         Self::empty()
@@ -54,14 +55,13 @@ impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
 }
 
 impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
     pub fn new(blocks: &Vec<ITEM>) -> Self {
         if blocks.len() != LIMIT {
             panic!("invalid block array size (must be {})", LIMIT);
         }
-
 
         let mut palette = blocks.clone();
         palette.par_sort_unstable();
@@ -85,7 +85,6 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
     }
 
     pub fn get(&self, i: usize) -> &ITEM {
-
         let item = self.grid.get(i);
         if let Some(item) = item {
             return self.palette.get(item).unwrap();
@@ -114,25 +113,27 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         self.grid = PackedVec::new(unpacked);
     }
 
-    pub fn set_many(
-        &mut self,
-        range: Range<usize>,
-        block: ITEM,
-    ) {
-        if range.end > LIMIT  || range.start > LIMIT  {
+    //TODO set many takes to long for large ranges optimize it
+    pub fn set_many(&mut self, range: Range<usize>, block: ITEM) {
+        if range.end > LIMIT || range.start > LIMIT {
             panic!("index out of bounds");
         }
 
         let mut unpacked = self.grid.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
 
+        let maybe_unused = unpacked
+            .par_iter_mut()
+            .skip(range.start)
+            .take(range.end - range.start)
+            .map(|block| {
+                let old = *block;
+                *block = palette_id;
+                old
+            })
+            .collect::<Vec<_>>();
 
-        //TODO try parallelizing
-        for i in range {
-            let former_palette_id = unpacked[i];
-            unpacked[i] = palette_id;
-            self.remove_if_unused(former_palette_id, &mut unpacked);
-        }
+        self.remove_many_if_unused(&maybe_unused, &mut unpacked);
 
         self.grid = PackedVec::new(unpacked);
     }
@@ -145,35 +146,16 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         })
     }
 
-    /*
-    fn remove_many_if_unused(&mut self, palette_ids: &[usize], unpacked: &mut Vec<usize>) {
-        let mut unused_ids = palette_ids.par_iter()
-            .filter(|palette_id| unpacked.par_iter().any(|block| *block == **palette_id).not())
-            .copied()
-            .collect::<Vec<_>>();
-        unused_ids.par_sort_unstable();
-        let range = unused_ids[0]..unused_ids[unused_ids.len() - 1];
+    pub fn shrink_to_fit(&mut self) {
+        self.palette.shrink_to_fit();
+    }
 
-
-        unpacked.par_iter_mut()
-            .for_each(|block| {
-                if range.contains(block) {
-
-                    let decrement_by = unused_ids
-                        .iter()
-                        .copied()
-                        .skip_while(|unused_id| unused_id < *block)
-                        .count();
-                    *block -= decrement_by;
-                }
-            });
-
-
-        for palette_id in unused_ids {
-            self.palette.remove(palette_id);
+    fn remove_many_if_unused(&mut self, maybe_unused: &[usize], unpacked: &mut Vec<usize>) {
+        //TODO replace with batch and parallel removal
+        for (index, palette_id) in maybe_unused.iter().sorted_unstable().dedup().enumerate() {
+            self.remove_if_unused(*palette_id - index, unpacked);
         }
     }
-     */
 
     ///looks if the any block in the grid point to the index and if not removes it from the palette
     fn remove_if_unused(&mut self, palette_id: usize, unpacked: &mut Vec<usize>) {
@@ -197,10 +179,10 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         });
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&ITEM> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &ITEM> + '_ {
         self.grid
             .iter()
-            .map(|palette_id| self.palette.get(palette_id).unwrap())
+            .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
     }
 
     ///returns the estimated memory usage in bytes of the chunk including overhead
@@ -212,17 +194,7 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         struct_size + palette_size + grid_size
     }
 
-    pub fn export(&self) -> Box<BlockArray<ITEM>> {
-        let vec = self.par_iter().cloned().collect::<Vec<_>>();
-
-        let attempt: [ITEM; CHUNK_VOLUME] = vec.try_into().unwrap();
-        Box::new(attempt)
-    }
-
-    pub fn par_iter(&self) -> impl ParallelIterator<Item=&ITEM> + '_ {
-        self.grid
-            .iter()
-            .par_bridge()
-            .map(|palette_id| self.palette.get(palette_id).unwrap())
+    pub fn export(&self) -> Vec<ITEM> {
+        self.iter().cloned().collect::<Vec<_>>()
     }
 }

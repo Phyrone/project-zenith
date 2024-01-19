@@ -1,15 +1,15 @@
 use block_mesh::VoxelVisibility;
 
-use game2::material::Material;
+use game2::material::{Block, Material};
 
-pub trait MaterialClientData {
+pub trait BlockClientData {
     fn get_visibility(&self) -> VoxelVisibility;
 }
 
-impl MaterialClientData for Material {
+impl BlockClientData for Block {
     fn get_visibility(&self) -> VoxelVisibility {
         match self {
-            Material::AIR => VoxelVisibility::Empty,
+            Block::AIR => VoxelVisibility::Empty,
             _ => VoxelVisibility::Opaque,
         }
     }

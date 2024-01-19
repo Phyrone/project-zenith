@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+
+/* === Common === */
+package common;
+
+message ChunkPosition{
+  sint64 x = 0x01;
+  sint64 y = 0x02;
+  sint64 z = 0x03;
+}
+
+message Position{
+  sint64 x = 0x01;
+  sint64 y = 0x02;
+  sint64 z = 0x03;
+  optional double fine_x = 0x11;
+  optional double fine_y = 0x12;
+  optional double fine_z = 0x13;
+}
+
+message Velocity{
+  double x = 0x01;
+  double y = 0x02;
+  double z = 0x03;
+}
+
+message Rotation{
+  float pitch = 0x01;
+  float yaw = 0x02;
+}
+
+message MessageComponent{
+  oneof content{
+    string text = 0x11;
+    MessageComponentFormat format = 0x12;
+  }
+}
+message MessageComponentFormat{
+  MessageComponent content = 0x01;
+  reserved 2; //Color
+  reserved 3; //Bold
+  reserved 4; //Italic
+  reserved 5; //Underlined
+  reserved 6; //Strikethrough
+  reserved 7; //Obfuscated
+}
+
+
+

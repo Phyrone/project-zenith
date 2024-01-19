@@ -5,11 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+
 [dependencies]
 serde = { version = "1.0.193", features = ["derive", "alloc", "rc"] }
 game2 = { path = ".." }
 uuid = { version = "1.6.1", features = ["v4", "serde", "wasm-bindgen", "getrandom"] }
-deno_core = "0.240.0"
+deno_core = "0.246.0"
 tokio = { version = "1.35.1", features = ["full"] }
 bincode = { version = "1.3.3", features = ["i128"] }
 async-trait = "0.1.77"
@@ -21,14 +22,9 @@ rayon = "1.8.0"
 rand = { version = "0.8.5", features = ["log", "serde"] }
 opensimplex2 = "1.0.1"
 wtransport = "0.1.10"
+quinn = "0.10.2"
+bevy = { version = "0.12.1", default-features = false, features = ["multi-threaded", "async-io"] }
 
-[dependencies.bevy]
-version = "0.12.1"
-default-features = false
-features = [
-    "multi-threaded",
-    "async-io"
-]
 
 [profile.dev]
 opt-level = 1
@@ -45,3 +41,5 @@ codegen-units = 1
 opt-level = 3
 lto = true
 codegen-units = 1
+
+

@@ -32,6 +32,9 @@ pub enum Material {
     WoodPlanks(WoodPlanksData),
     #[subenum(Block)]
     LEAVES,
+    #[subenum(Block)]
+    A,
+
     APPLE,
 }
 

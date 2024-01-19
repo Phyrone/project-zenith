@@ -23,10 +23,13 @@ structdoc = "0.1.4"
 subenum = "1.1.1"
 unstructured = "0.5.1"
 zstd = { version = "0.13.0", features = ["wasm", "bindgen"] }
+bevy = { version = "0.12.1", default-features = false }
+prost = { version = "0.12.3", features = ["std", "prost-derive", "default"] }
+prost-types = "0.12.3"
+bitvec = { version = "1.0.1", features = ["serde"] }
 
-[dependencies.bevy]
-version = "0.12.1"
-default-features = false
+[build-dependencies]
+prost-build = "0.12.3"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["tokio", "html_reports"] }
@@ -35,6 +38,7 @@ criterion = { version = "0.5.1", features = ["tokio", "html_reports"] }
 members = [
     "client",
     "server",
+    "libs/prost_stream",
 ]
 
 [profile.release]

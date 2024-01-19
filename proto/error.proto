@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+
+/* === Error === */
+package error;
+
+message ErrorPush{
+
+}
+message ErrorResponse{
+
+}

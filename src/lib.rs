@@ -6,7 +6,8 @@ pub mod chunk;
 pub mod compressible;
 pub mod humanize;
 pub mod material;
-mod storage;
+pub mod protocol;
+pub mod storage;
 
 pub const CHUNK_SIZE: usize = 32;
 
@@ -109,7 +110,7 @@ impl AxialRotation {
 /// Indicates the face of a block, chunk or some other block-like object.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Component)]
-pub enum Face {
+pub enum BlockFace {
     Top = FACE_TOP as u8,
     Bottom = FACE_BOTTOM as u8,
     East = FACE_EAST as u8,
@@ -118,36 +119,36 @@ pub enum Face {
     South = FACE_SOUTH as u8,
 }
 
-impl Face {
+impl BlockFace {
     pub fn get_face_index(&self) -> u32 {
         match self {
-            Face::Top => FACE_TOP,
-            Face::Bottom => FACE_BOTTOM,
-            Face::East => FACE_EAST,
-            Face::West => FACE_WEST,
-            Face::North => FACE_NORTH,
-            Face::South => FACE_SOUTH,
+            BlockFace::Top => FACE_TOP,
+            BlockFace::Bottom => FACE_BOTTOM,
+            BlockFace::East => FACE_EAST,
+            BlockFace::West => FACE_WEST,
+            BlockFace::North => FACE_NORTH,
+            BlockFace::South => FACE_SOUTH,
         }
     }
-    fn get_opposite_face(&self) -> Face {
+    fn get_opposite_face(&self) -> BlockFace {
         match self {
-            Face::Top => Face::Bottom,
-            Face::Bottom => Face::Top,
-            Face::East => Face::West,
-            Face::West => Face::East,
-            Face::North => Face::South,
-            Face::South => Face::North,
+            BlockFace::Top => BlockFace::Bottom,
+            BlockFace::Bottom => BlockFace::Top,
+            BlockFace::East => BlockFace::West,
+            BlockFace::West => BlockFace::East,
+            BlockFace::North => BlockFace::South,
+            BlockFace::South => BlockFace::North,
         }
     }
 
-    fn from_index(index: u32) -> Face {
+    fn from_index(index: u32) -> BlockFace {
         match index {
-            FACE_TOP => Face::Top,
-            FACE_BOTTOM => Face::Bottom,
-            FACE_EAST => Face::East,
-            FACE_WEST => Face::West,
-            FACE_NORTH => Face::North,
-            FACE_SOUTH => Face::South,
+            FACE_TOP => BlockFace::Top,
+            FACE_BOTTOM => BlockFace::Bottom,
+            FACE_EAST => BlockFace::East,
+            FACE_WEST => BlockFace::West,
+            FACE_NORTH => BlockFace::North,
+            FACE_SOUTH => BlockFace::South,
             _ => panic!("there is no face with index {}", index),
         }
     }
@@ -161,6 +162,31 @@ impl Face {
             FACE_NORTH => FACE_SOUTH,
             FACE_SOUTH => FACE_NORTH,
             _ => panic!("there is no face with index {}", index),
+        }
+    }
+
+    pub fn get_face_multipliers(&self) -> (i32, i32, i32) {
+        match self {
+            BlockFace::Top => (0, 1, 0),
+            BlockFace::Bottom => (0, -1, 0),
+            BlockFace::East => (1, 0, 0),
+            BlockFace::West => (-1, 0, 0),
+            BlockFace::North => (0, 0, 1),
+            BlockFace::South => (0, 0, -1),
+        }
+    }
+
+    #[inline]
+    pub fn iter_num_to_faced_index(&self, size: usize, index: usize) -> usize {
+        assert!(index < size * size);
+        assert!(size > 0);
+        match self {
+            BlockFace::Top => index,
+            BlockFace::Bottom => size * size * (size - 1) + index,
+            BlockFace::East => size * (index + 1) - 1,
+            BlockFace::West => size * index,
+            BlockFace::North => size * size * (index + 1) - 1,
+            BlockFace::South => size * size * index,
         }
     }
 }
@@ -191,17 +217,17 @@ pub struct BlockRotation(u8);
 
 impl Default for BlockRotation {
     fn default() -> Self {
-        Self::new(Face::Top, AxialRotation::Zero)
+        Self::new(BlockFace::Top, AxialRotation::Zero)
     }
 }
 
 impl BlockRotation {
-    pub fn new(face: Face, axial_rotation: AxialRotation) -> BlockRotation {
+    pub fn new(face: BlockFace, axial_rotation: AxialRotation) -> BlockRotation {
         BlockRotation((face.get_face_index() | (axial_rotation.to_index() << 3)) as u8)
     }
 
-    pub fn get_face(&self) -> Face {
-        Face::from_index((self.0 & 0b00000111) as u32)
+    pub fn get_face(&self) -> BlockFace {
+        BlockFace::from_index((self.0 & 0b00000111) as u32)
     }
     pub fn get_axial_rotation(&self) -> AxialRotation {
         AxialRotation::from_index(((self.0 & 0b00011000) >> 3) as u32)
@@ -213,8 +239,49 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn test_iter_num_to_faced_index() {
+        let block_face = BlockFace::Top;
+        let size = 2;
+        let index = 1;
+        let result = block_face.iter_num_to_faced_index(size, index);
+        assert_eq!(
+            result, 1,
+            "Expected 1 for BlockFace::Top with size 2 and index 1"
+        );
+
+        let block_face = BlockFace::Bottom;
+        let result = block_face.iter_num_to_faced_index(size, index);
+        assert_eq!(
+            result, 5,
+            "Expected 5 for BlockFace::Bottom with size 2 and index 1"
+        );
+
+        let block_face = BlockFace::East;
+        let result = block_face.iter_num_to_faced_index(size, index);
+        assert_eq!(
+            result, 3,
+            "Expected 3 for BlockFace::East with size 2 and index 1"
+        );
+
+        let block_face = BlockFace::West;
+        let result = block_face.iter_num_to_faced_index(size, index);
+        assert_eq!(
+            result, 2,
+            "Expected 2 for BlockFace::West with size 2 and index 1"
+        );
+
+        let block_face = BlockFace::North;
+        let result = block_face.iter_num_to_faced_index(size, index);
+        assert_eq!(
+            result, 5,
+            "Expected 5 for BlockFace::North with size 2 and index 1"
+        );
+
+        let block_face = BlockFace::South;
+        let result = block_face.iter_num_to_faced_index(size, index);
+        assert_eq!(
+            result, 4,
+            "Expected 4 for BlockFace::South with size 2 and index 1"
+        );
     }
 }

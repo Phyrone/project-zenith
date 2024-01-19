@@ -4,11 +4,10 @@ use bevy::prelude::{
 };
 
 use game2::chunk::ChunkStorage;
-use game2::material::{Block, Material};
+use game2::material::Block;
 use game2::CHUNK_SIZE;
 
 use crate::world::chunk::grid::ChunkGrid;
-use crate::world::chunk::voxel::{Voxel, VoxelBlock, VOXEL_BLOCK_VOLUME};
 use crate::world::chunk::{ChunkRenderStage, RenderingWorldFixedChunk};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Default)]
@@ -34,24 +33,19 @@ pub enum ChunkDataEntry {
     Block(Block),
 }
 
+impl ChunkDataEntry {
+    pub fn empty() -> Self {
+        Self::Block(Block::AIR)
+    }
+}
+
 impl Default for ChunkDataEntry {
     fn default() -> Self {
         Self::Block(Block::AIR)
     }
 }
 
-impl ChunkDataEntry {
-    pub fn create_voxel_block(&self) -> VoxelBlock {
-        match self {
-            //ChunkDataEntry::Empty => [Voxel::air(); 16 * 16 * 16],
-            ChunkDataEntry::Block(block) => {
-                [Voxel::new(Material::from(*block)); VOXEL_BLOCK_VOLUME]
-            }
-        }
-    }
-}
-
-pub type ChunkEdge = [[ChunkDataEntry; CHUNK_SIZE]; CHUNK_SIZE];
+pub type ChunkEdge = [ChunkDataEntry; CHUNK_SIZE * CHUNK_SIZE];
 
 #[derive(Debug, Clone, Component)]
 pub struct ClientChunkEdgeData {
