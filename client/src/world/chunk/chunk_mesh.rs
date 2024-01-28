@@ -2,8 +2,8 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task};
 
-use crate::world::chunk::chunk_data::ClientChunkEdgeData;
-use crate::world::chunk::chunk_data::ClientChunkStorage;
+use crate::world::chunk::chunk_data::ClientChunkData;
+use crate::world::chunk::chunk_data::ClientChunkEdge;
 use crate::world::chunk::RenderingWorldFixedChunk;
 
 //works as follows:
@@ -24,8 +24,8 @@ impl Plugin for ChunkMeshPlugin {
 
 fn build_pre_meshes_system(
     changed_chunks: Query<
-        (&RenderingWorldFixedChunk, &ClientChunkStorage),
-        (Changed<ClientChunkStorage>, Changed<ClientChunkEdgeData>),
+        (&RenderingWorldFixedChunk, &ClientChunkData),
+        (Changed<ClientChunkData>, Changed<ClientChunkEdge>),
     >,
 ) {
     let pool = AsyncComputeTaskPool::get();

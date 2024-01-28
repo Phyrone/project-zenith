@@ -42,8 +42,8 @@ pub trait ItMustSend {
 }
 
 impl<T> ItMustSend for Expectations<T>
-where
-    T: Send,
+    where
+        T: Send,
 {
     fn it_must_send(&self) -> &Self {
         self
@@ -130,7 +130,7 @@ impl BlockFace {
             BlockFace::South => FACE_SOUTH,
         }
     }
-    fn get_opposite_face(&self) -> BlockFace {
+    pub fn get_opposite_face(&self) -> BlockFace {
         match self {
             BlockFace::Top => BlockFace::Bottom,
             BlockFace::Bottom => BlockFace::Top,
@@ -141,7 +141,7 @@ impl BlockFace {
         }
     }
 
-    fn from_index(index: u32) -> BlockFace {
+    pub fn from_index(index: u32) -> BlockFace {
         match index {
             FACE_TOP => BlockFace::Top,
             FACE_BOTTOM => BlockFace::Bottom,
@@ -153,7 +153,7 @@ impl BlockFace {
         }
     }
 
-    fn opposite_face_index(index: u32) -> u32 {
+    pub fn opposite_face_index(index: u32) -> u32 {
         match index {
             FACE_TOP => FACE_BOTTOM,
             FACE_BOTTOM => FACE_TOP,
@@ -201,17 +201,17 @@ pub const FACE_SOUTH: u32 = 5;
 //TODO store mirroring bits
 /// represents all possible rottations of a block in a single byte
 #[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    Ord,
-    PartialOrd,
-    Component,
-    serde::Serialize,
-    serde::Deserialize,
+Debug,
+Clone,
+Copy,
+PartialEq,
+Eq,
+Hash,
+Ord,
+PartialOrd,
+Component,
+serde::Serialize,
+serde::Deserialize,
 )]
 pub struct BlockRotation(u8);
 

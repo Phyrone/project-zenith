@@ -1,18 +1,17 @@
 use bevy::prelude::Mesh;
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
-use block_mesh::ndshape::ConstShape3u32;
 use block_mesh::{
-    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, VoxelVisibility,
-    RIGHT_HANDED_Y_UP_CONFIG,
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
+    VoxelVisibility,
 };
+use block_mesh::ndshape::ConstShape3u32;
 use rayon::prelude::*;
 
+use game2::{BlockFace, CHUNK_SIZE, FACE_BOTTOM, FACE_EAST, FACE_TOP};
 use game2::chunk::ChunkStorage;
 use game2::material::Block;
-use game2::{BlockFace, CHUNK_SIZE, FACE_BOTTOM, FACE_EAST, FACE_TOP};
 
-use crate::world::chunk::chunk_data::ChunkDataEntry;
-use crate::world::chunk::chunk_data::ChunkEdge;
+use crate::world::chunk::chunk_data::{ChunkDataEntry, EdgeStorage};
 use crate::world::material::BlockClientData;
 use crate::world::MESH_TEXTURE_ATTRIBUTE;
 
@@ -35,17 +34,17 @@ const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 const FACES: &[OrientedBlockFace; 6] = &RIGHT_HANDED_Y_UP_CONFIG.faces;
 
 #[derive(
-    Debug,
-    Clone,
-    Copy,
-    Eq,
-    PartialEq,
-    Hash,
-    Ord,
-    PartialOrd,
-    Default,
-    serde::Serialize,
-    serde::Deserialize,
+Debug,
+Clone,
+Copy,
+Eq,
+PartialEq,
+Hash,
+Ord,
+PartialOrd,
+Default,
+serde::Serialize,
+serde::Deserialize,
 )]
 struct Voxel {
     block: Block,
@@ -96,7 +95,7 @@ pub struct VoxelChunk {
 }
 
 impl VoxelChunk {
-    pub fn new(data: &ChunkStorage<ChunkDataEntry>, edges: &[ChunkEdge; 6]) -> Self {
+    pub fn new(data: &ChunkStorage<ChunkDataEntry>, edges: &EdgeStorage) -> Self {
         let mut storage = [Voxel::new(Block::AIR); VOXEL_CHUNK_VOLUME];
         //TODO collect chunk data entries to voxels first to not rerun the import function 8 times per block
         storage.par_iter_mut().enumerate().for_each(|(i, voxel)| {
@@ -323,7 +322,7 @@ fn import_from_data_edges(
     y: usize,
     z: usize,
     face: BlockFace,
-    edges: &[ChunkEdge; 6],
+    edges: &EdgeStorage,
 ) -> Voxel {
     let (x, y, z) = ((x.max(1) - 1), y.max(1) - 1, z.max(1) - 1);
     let (chunk_x, chunk_y, chunk_z) = (
@@ -340,27 +339,33 @@ fn import_from_data_edges(
     //TODO check if this is correct
     let (entry, index) = match face {
         BlockFace::Top => (
-            &edges[FACE_TOP as usize][chunk_x + chunk_z * CHUNK_SIZE],
+            //&edges[FACE_TOP as usize][chunk_x + chunk_z * CHUNK_SIZE],
+            edges.get((FACE_TOP as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_z * CHUNK_SIZE),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::Bottom => (
-            &edges[FACE_BOTTOM as usize][chunk_x + chunk_z * CHUNK_SIZE],
+            //&edges[FACE_BOTTOM as usize][chunk_x + chunk_z * CHUNK_SIZE],
+            edges.get((FACE_BOTTOM as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_z * CHUNK_SIZE),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::East => (
-            &edges[FACE_EAST as usize][chunk_y + chunk_z * CHUNK_SIZE],
+            //&edges[FACE_EAST as usize][chunk_y + chunk_z * CHUNK_SIZE],
+            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_y + chunk_z * CHUNK_SIZE),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::West => (
-            &edges[FACE_EAST as usize][chunk_y + chunk_z * CHUNK_SIZE],
+            //&edges[FACE_EAST as usize][chunk_y + chunk_z * CHUNK_SIZE],
+            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_y + chunk_z * CHUNK_SIZE),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::North => (
-            &edges[FACE_EAST as usize][chunk_x + chunk_y * CHUNK_SIZE],
+            //&edges[FACE_EAST as usize][chunk_x + chunk_y * CHUNK_SIZE],
+            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_y * CHUNK_SIZE),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::South => (
-            &edges[FACE_EAST as usize][chunk_x + chunk_y * CHUNK_SIZE],
+            //&edges[FACE_EAST as usize][chunk_x + chunk_y * CHUNK_SIZE],
+            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_y * CHUNK_SIZE),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
     };

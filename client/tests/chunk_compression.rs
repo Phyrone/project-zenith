@@ -1,14 +1,14 @@
 use std::mem::size_of;
 
-use client::world::block_data::ClientBlockState;
-use client::world::chunk::chunk_data::{ChunkDataEntry, ClientChunkStorage};
+use client::world::chunk::chunk_data::ChunkDataEntry;
+use game2::chunk::ChunkStorage;
 use game2::compressible::Compressible;
 use game2::humanize::humanize_memory;
 use game2::material::{Block, WoodData, WoodPlanksData};
 
 #[inline]
-fn create_test_chunk() -> ClientChunkStorage {
-    let mut chunk_storage = ClientChunkStorage::empty();
+fn create_test_chunk() -> ChunkStorage<ChunkDataEntry> {
+    let mut chunk_storage = ChunkStorage::empty();
 
     //fill half with stone
     chunk_storage.set_many(0..32, 0..20, 0..32, ChunkDataEntry::Block(Block::STONE));
@@ -17,18 +17,8 @@ fn create_test_chunk() -> ClientChunkStorage {
     //set some random blocks
     chunk_storage.set(1, 14, 1, ChunkDataEntry::Block(Block::DIRT));
     chunk_storage.set(1, 1, 1, ChunkDataEntry::Block(Block::LEAVES));
-    chunk_storage.set(
-        23,
-        22,
-        23,
-        ChunkDataEntry::Block(Block::WOOD(WoodData::default())),
-    );
-    chunk_storage.set_many(
-        13..20,
-        5..7,
-        20..22,
-        ChunkDataEntry::Block(Block::WoodPlanks(WoodPlanksData::default())),
-    );
+    chunk_storage.set(23, 22, 23, ChunkDataEntry::Block(Block::WOOD(WoodData::default())));
+    chunk_storage.set_many(13..20, 5..7, 20..22, ChunkDataEntry::Block(Block::WoodPlanks(WoodPlanksData::default())));
 
     chunk_storage
 }

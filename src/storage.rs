@@ -7,60 +7,58 @@ use itertools::Itertools;
 use packedvec::PackedVec;
 use rayon::prelude::*;
 
-use crate::CHUNK_SIZE;
-
-type BlockArray<Block> = [Block; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Component, serde::Serialize, serde::Deserialize)]
-//TODO add serde
-/// stores a matrix of blocks (thats its orginal intention but you can also store other things)
-/// this storage works the best when there are many identical objects and there are more reads than writes
 pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Sync> {
-    //a ordered list of all blocks (including blockstates)
-    //TODO maybe replace with smallvec (find a suitable size)
     palette: Vec<ITEM>,
-
-    //2 bytes are sufficient as the amount of different block-(states) is limited to max 32^3 = 32768
-    grid: PackedVec<usize>,
+    data: PackedVec<usize>,
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
         PackedVec::new(vec![0; SIZE])
     }
 
+
+    /// creates a storage with [SIZE] items.
+    /// it will use the [Default] value of [ITEM]
+    /// Its storage usage should be minimal.
     pub fn empty() -> Self {
         Self {
             palette: vec![ITEM::default()],
-            grid: Self::empty_grid(),
+            data: Self::empty_grid(),
         }
     }
 
     pub fn clear(&mut self) {
         self.palette = vec![ITEM::default()];
-        self.grid = Self::empty_grid()
+        self.data = Self::empty_grid()
     }
 }
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
+
     fn default() -> Self {
         Self::empty()
     }
 }
 
 impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
+
+    /// creates a storage from an array of items.
+    /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
+    /// [blocks] must have a length of [LIMIT]
     pub fn new(blocks: &Vec<ITEM>) -> Self {
         if blocks.len() != LIMIT {
-            panic!("invalid block array size (must be {})", LIMIT);
+            panic!("invalid block array size (must be {} but is {})", LIMIT, blocks.len());
         }
 
         let mut palette = blocks.clone();
@@ -76,7 +74,7 @@ where
         let packed_grid = PackedVec::new(grid);
         Self {
             palette,
-            grid: packed_grid,
+            data: packed_grid,
         }
     }
 
@@ -85,7 +83,7 @@ where
     }
 
     pub fn get(&self, i: usize) -> &ITEM {
-        let item = self.grid.get(i);
+        let item = self.data.get(i);
         if let Some(item) = item {
             return self.palette.get(item).unwrap();
         } else {
@@ -104,13 +102,13 @@ where
             panic!("index out of bounds");
         }
 
-        let former_palette_id = unsafe { self.grid.get_unchecked(i) };
-        let mut unpacked = self.grid.iter().collect::<Vec<_>>();
+        let former_palette_id = unsafe { self.data.get_unchecked(i) };
+        let mut unpacked = self.data.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
         unpacked[i] = palette_id;
 
         self.remove_if_unused(former_palette_id, &mut unpacked);
-        self.grid = PackedVec::new(unpacked);
+        self.data = PackedVec::new(unpacked);
     }
 
     //TODO set many takes to long for large ranges optimize it
@@ -119,7 +117,7 @@ where
             panic!("index out of bounds");
         }
 
-        let mut unpacked = self.grid.iter().collect::<Vec<_>>();
+        let mut unpacked = self.data.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
 
         let maybe_unused = unpacked
@@ -135,7 +133,7 @@ where
 
         self.remove_many_if_unused(&maybe_unused, &mut unpacked);
 
-        self.grid = PackedVec::new(unpacked);
+        self.data = PackedVec::new(unpacked);
     }
 
     fn get_or_create_pallete_id(&mut self, block: ITEM, unpacked: &mut Vec<usize>) -> usize {
@@ -179,8 +177,8 @@ where
         });
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &ITEM> + '_ {
-        self.grid
+    pub fn iter(&self) -> impl Iterator<Item=&ITEM> + '_ {
+        self.data
             .iter()
             .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
     }
@@ -190,11 +188,20 @@ where
     pub fn memory_usage(&self) -> usize {
         let struct_size = std::mem::size_of::<Self>();
         let palette_size = self.palette.capacity() * std::mem::size_of::<ITEM>();
-        let grid_size = (self.grid.len() * self.grid.bwidth()) / 8;
+        let grid_size = (self.data.len() * self.data.bwidth()) / 8;
         struct_size + palette_size + grid_size
     }
 
     pub fn export(&self) -> Vec<ITEM> {
         self.iter().cloned().collect::<Vec<_>>()
     }
+}
+
+#[cfg(test)]
+mod test{
+    use super::*;
+
+
+
+
 }
