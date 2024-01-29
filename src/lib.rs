@@ -1,8 +1,6 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
-
-pub mod chunk;
 pub mod compressible;
 pub mod humanize;
 pub mod material;
@@ -42,8 +40,8 @@ pub trait ItMustSend {
 }
 
 impl<T> ItMustSend for Expectations<T>
-    where
-        T: Send,
+where
+    T: Send,
 {
     fn it_must_send(&self) -> &Self {
         self
@@ -165,7 +163,7 @@ impl BlockFace {
         }
     }
 
-    pub fn get_face_multipliers(&self) -> (i32, i32, i32) {
+    pub fn get_vector_values(&self) -> (i32, i32, i32) {
         match self {
             BlockFace::Top => (0, 1, 0),
             BlockFace::Bottom => (0, -1, 0),
@@ -201,17 +199,17 @@ pub const FACE_SOUTH: u32 = 5;
 //TODO store mirroring bits
 /// represents all possible rottations of a block in a single byte
 #[derive(
-Debug,
-Clone,
-Copy,
-PartialEq,
-Eq,
-Hash,
-Ord,
-PartialOrd,
-Component,
-serde::Serialize,
-serde::Deserialize,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Component,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 pub struct BlockRotation(u8);
 

@@ -1,24 +1,26 @@
 use std::mem::size_of;
 
-use client::world::chunk::chunk_data::ChunkDataEntry;
-use game2::chunk::ChunkStorage;
+use client::world::chunk::chunk_data::{ChunkDataEntry, ChunkStorage};
 use game2::compressible::Compressible;
 use game2::humanize::humanize_memory;
-use game2::material::{Block, WoodData, WoodPlanksData};
+use game2::material::Block;
 
 #[inline]
-fn create_test_chunk() -> ChunkStorage<ChunkDataEntry> {
+fn create_test_chunk() -> ChunkStorage {
     let mut chunk_storage = ChunkStorage::empty();
 
     //fill half with stone
-    chunk_storage.set_many(0..32, 0..20, 0..32, ChunkDataEntry::Block(Block::STONE));
+    chunk_storage.set_many(0..32 * 32 * 10, ChunkDataEntry::Block(Block::STONE));
     //cover with grass
-    chunk_storage.set_many(0..32, 20..20, 0..32, ChunkDataEntry::Block(Block::GRASS));
+    chunk_storage.set_many(
+        32 * 32 * 10..32 * 32 * 11,
+        ChunkDataEntry::Block(Block::GRASS),
+    );
     //set some random blocks
-    chunk_storage.set(1, 14, 1, ChunkDataEntry::Block(Block::DIRT));
-    chunk_storage.set(1, 1, 1, ChunkDataEntry::Block(Block::LEAVES));
-    chunk_storage.set(23, 22, 23, ChunkDataEntry::Block(Block::WOOD(WoodData::default())));
-    chunk_storage.set_many(13..20, 5..7, 20..22, ChunkDataEntry::Block(Block::WoodPlanks(WoodPlanksData::default())));
+    chunk_storage.set(
+        32 * 32 * 12 + 32 * 2 + 14,
+        ChunkDataEntry::Block(Block::DIRT),
+    );
 
     chunk_storage
 }
@@ -26,6 +28,7 @@ fn create_test_chunk() -> ChunkStorage<ChunkDataEntry> {
 #[test]
 fn test_chunk_compression() {
     let chunk = create_test_chunk();
+    //let chunk = ChunkStorage::empty();
 
     let entry_size = size_of::<ChunkDataEntry>();
     println!("entry size: {} bytes", humanize_memory(entry_size));
@@ -41,6 +44,7 @@ fn test_chunk_compression() {
         "uncompressed:theoretical: {} bytes",
         humanize_memory(entry_size * 32 * 32 * 32)
     );
+    println!("chunk: {}", humanize_memory(chunk.memory_usage()));
     println!("raw: {}", humanize_memory(lz4_compressed.len_data()));
     println!("lz4: {}", humanize_memory(lz4_compressed.len_compressed()));
     println!(

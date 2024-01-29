@@ -2,17 +2,17 @@ use std::any::Any;
 
 use enumset::EnumSetType;
 
-pub mod common;
-pub mod packets;
 pub mod channel;
+pub mod common;
 pub mod datagram;
 pub mod error;
+pub mod packets;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u8)]
 pub enum OpenIntent {
-    /// A single message is send over the channel. EOF is used to determine the end of the message.
-    /// Comparable to a HTTP Get/Post/Put.
+    /// A single message is sent over the channel. EOF is used to determine the end of the message.
+    /// Comparable to an HTTP Get/Post/Put.
     Single = 0,
 
     /// A sequence of messages is send over the channel. Using LEN wireformat to determine the length of each message.
@@ -60,5 +60,3 @@ impl std::fmt::Display for InvalidChannelTypeError {
 }
 
 impl std::error::Error for InvalidChannelTypeError {}
-
-

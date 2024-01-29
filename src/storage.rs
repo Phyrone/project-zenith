@@ -14,13 +14,12 @@ pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Sy
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
         PackedVec::new(vec![0; SIZE])
     }
-
 
     /// creates a storage with [SIZE] items.
     /// it will use the [Default] value of [ITEM]
@@ -39,26 +38,28 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
 }
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
-
     fn default() -> Self {
         Self::empty()
     }
 }
 
 impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
-
     /// creates a storage from an array of items.
     /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
     /// [blocks] must have a length of [LIMIT]
     pub fn new(blocks: &Vec<ITEM>) -> Self {
         if blocks.len() != LIMIT {
-            panic!("invalid block array size (must be {} but is {})", LIMIT, blocks.len());
+            panic!(
+                "invalid block array size (must be {} but is {})",
+                LIMIT,
+                blocks.len()
+            );
         }
 
         let mut palette = blocks.clone();
@@ -177,7 +178,7 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         });
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&ITEM> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &ITEM> + '_ {
         self.data
             .iter()
             .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
@@ -198,10 +199,6 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
 }
 
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
-
-
-
-
 }

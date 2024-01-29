@@ -1,16 +1,17 @@
+use bevy::ecs::bundle::DynamicBundle;
 use bevy::prelude::Mesh;
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
-use block_mesh::{
-    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
-    VoxelVisibility,
-};
 use block_mesh::ndshape::ConstShape3u32;
+use block_mesh::{
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, VoxelVisibility,
+    RIGHT_HANDED_Y_UP_CONFIG,
+};
 use rayon::prelude::*;
 
-use game2::{BlockFace, CHUNK_SIZE, FACE_BOTTOM, FACE_EAST, FACE_TOP};
-use game2::chunk::ChunkStorage;
 use game2::material::Block;
+use game2::{BlockFace, CHUNK_SIZE, FACE_BOTTOM, FACE_EAST, FACE_TOP};
 
+use crate::world::chunk::chunk_data::ChunkStorage;
 use crate::world::chunk::chunk_data::{ChunkDataEntry, EdgeStorage};
 use crate::world::material::BlockClientData;
 use crate::world::MESH_TEXTURE_ATTRIBUTE;
@@ -34,17 +35,17 @@ const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 const FACES: &[OrientedBlockFace; 6] = &RIGHT_HANDED_Y_UP_CONFIG.faces;
 
 #[derive(
-Debug,
-Clone,
-Copy,
-Eq,
-PartialEq,
-Hash,
-Ord,
-PartialOrd,
-Default,
-serde::Serialize,
-serde::Deserialize,
+    Debug,
+    Clone,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Default,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 struct Voxel {
     block: Block,
@@ -89,51 +90,92 @@ impl block_mesh::MergeVoxel for Voxel {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct VoxelChunk {
-    //around 500kb of memory hopefully it does not overflow the stack
-    //keeping it on the stack does hopefully improve performance by a lot since this data is short lived
     grid: [Voxel; VOXEL_CHUNK_VOLUME],
 }
 
 impl VoxelChunk {
-    pub fn new(data: &ChunkStorage<ChunkDataEntry>, edges: &EdgeStorage) -> Self {
+    pub fn new(data: &ChunkStorage, edges: &EdgeStorage) -> Self {
         let mut storage = [Voxel::new(Block::AIR); VOXEL_CHUNK_VOLUME];
-        //TODO collect chunk data entries to voxels first to not rerun the import function 8 times per block
-        storage.par_iter_mut().enumerate().for_each(|(i, voxel)| {
-            let x = i % VOXEL_CHUNK_SIZE;
-            let y = (i / VOXEL_CHUNK_SIZE) % VOXEL_CHUNK_SIZE;
-            let z = i / VOXEL_CHUNK_SIZE / VOXEL_CHUNK_SIZE;
+        storage
+            .par_iter_mut()
+            .enumerate()
+            .skip(VOXEL_CHUNK_SIZE)
+            .for_each(|(i, voxel)| {
+                let (x, y, z) = (
+                    i % VOXEL_CHUNK_SIZE,
+                    (i / VOXEL_CHUNK_SIZE) % VOXEL_CHUNK_SIZE,
+                    i / VOXEL_CHUNK_SIZE / VOXEL_CHUNK_SIZE,
+                );
+                //when in corners (more tant 1 condition is true) then skip
+                if (x == 0) as i8
+                    + (y == 0) as i8
+                    + (z == 0) as i8
+                    + (x == VOXEL_CHUNK_SIZE - 1) as i8
+                    + (y == VOXEL_CHUNK_SIZE - 1) as i8
+                    + (z == VOXEL_CHUNK_SIZE - 1) as i8
+                    > 1
+                {
+                    return;
+                }
 
-            //we dont care about the corners and there are not used anyways and determine them is unnecessary work
-            if (x == 0 || x == VOXEL_CHUNK_SIZE - 1) as u8
-                + (y == 0 || y == VOXEL_CHUNK_SIZE - 1) as u8
-                + (z == 0 || z == VOXEL_CHUNK_SIZE - 1) as u8
-                > 1
-            {
-                return;
-            }
+                let face = if x == 0 {
+                    Some(BlockFace::West)
+                } else if x == VOXEL_CHUNK_SIZE - 1 {
+                    Some(BlockFace::East)
+                } else if y == 0 {
+                    Some(BlockFace::Bottom)
+                } else if y == VOXEL_CHUNK_SIZE - 1 {
+                    Some(BlockFace::Top)
+                } else if z == 0 {
+                    Some(BlockFace::South)
+                } else if z == VOXEL_CHUNK_SIZE - 1 {
+                    Some(BlockFace::North)
+                } else {
+                    None
+                };
 
-            //i rely on the compiler to optimize this (looks like it easy could)
-            let face = if x == 0 {
-                Some(BlockFace::West)
-            } else if x == VOXEL_CHUNK_SIZE - 1 {
-                Some(BlockFace::East)
-            } else if y == 0 {
-                Some(BlockFace::Bottom)
-            } else if y == VOXEL_CHUNK_SIZE - 1 {
-                Some(BlockFace::Top)
-            } else if z == 0 {
-                Some(BlockFace::South)
-            } else if z == VOXEL_CHUNK_SIZE - 1 {
-                Some(BlockFace::North)
-            } else {
-                None
-            };
+                let (x, y, z) = (x - 1, y - 1, z - 1);
+                let (chunk_x, chunk_y, chunk_z) = (
+                    x / VOXELS_PER_METER,
+                    y / VOXELS_PER_METER,
+                    z / VOXELS_PER_METER,
+                );
+                let (offset_x, offset_y, offset_z) = (
+                    x % VOXELS_PER_METER,
+                    y % VOXELS_PER_METER,
+                    z % VOXELS_PER_METER,
+                );
 
-            *voxel = match face {
-                None => import_from_data(x, y, z, data),
-                Some(face) => import_from_data_edges(x, y, z, face, edges),
-            }
-        });
+                if let Some(face) = face {
+                    let face_offset = face.get_face_index() as usize * CHUNK_SIZE * CHUNK_SIZE;
+                    let entry_offset = match (face) {
+                        BlockFace::Top => (chunk_x + chunk_z * CHUNK_SIZE),
+                        BlockFace::Bottom => (chunk_x + chunk_z * CHUNK_SIZE),
+                        BlockFace::East => (chunk_y + chunk_z * CHUNK_SIZE),
+                        BlockFace::West => (chunk_y + chunk_z * CHUNK_SIZE),
+                        BlockFace::North => (chunk_x + chunk_y * CHUNK_SIZE),
+                        BlockFace::South => (chunk_x + chunk_y * CHUNK_SIZE),
+                    };
+                    let entry = edges.get(face_offset + entry_offset);
+                    let imported = Voxel::import(entry);
+                    let imported_offset = match (face) {
+                        BlockFace::Top => (offset_x + offset_z * VOXELS_PER_METER),
+                        BlockFace::Bottom => (offset_x + offset_z * VOXELS_PER_METER),
+                        BlockFace::East => (offset_x + offset_z * VOXELS_PER_METER),
+                        BlockFace::West => (offset_x + offset_z * VOXELS_PER_METER),
+                        BlockFace::North => (offset_x + offset_y * VOXELS_PER_METER),
+                        BlockFace::South => (offset_x + offset_y * VOXELS_PER_METER),
+                    };
+                    *voxel = imported[imported_offset];
+                } else {
+                    let entry = data
+                        .get(chunk_x + chunk_y * CHUNK_SIZE + chunk_z * CHUNK_SIZE * CHUNK_SIZE);
+                    let imported = Voxel::import(entry);
+                    *voxel = imported[offset_x
+                        + offset_y * VOXELS_PER_METER
+                        + offset_z * VOXELS_PER_METER * VOXELS_PER_METER];
+                }
+            });
 
         Self { grid: storage }
     }
@@ -298,6 +340,7 @@ impl VoxelChunk {
     }
 }
 
+/*
 fn import_from_data(x: usize, y: usize, z: usize, data: &ChunkStorage<ChunkDataEntry>) -> Voxel {
     //translate to "inner cube" coordinates
     let (x, y, z) = (x - 1, y - 1, z - 1);
@@ -315,7 +358,7 @@ fn import_from_data(x: usize, y: usize, z: usize, data: &ChunkStorage<ChunkDataE
 
     let block = Voxel::import(entry);
     block[VOXEL_BLOCK_SIZE * VOXEL_BLOCK_SIZE * offset_z + VOXEL_BLOCK_SIZE * offset_y + offset_x]
-}
+}*/
 
 fn import_from_data_edges(
     x: usize,
@@ -340,32 +383,44 @@ fn import_from_data_edges(
     let (entry, index) = match face {
         BlockFace::Top => (
             //&edges[FACE_TOP as usize][chunk_x + chunk_z * CHUNK_SIZE],
-            edges.get((FACE_TOP as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_z * CHUNK_SIZE),
+            edges.get(
+                (FACE_TOP as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_z * CHUNK_SIZE,
+            ),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::Bottom => (
             //&edges[FACE_BOTTOM as usize][chunk_x + chunk_z * CHUNK_SIZE],
-            edges.get((FACE_BOTTOM as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_z * CHUNK_SIZE),
+            edges.get(
+                (FACE_BOTTOM as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_z * CHUNK_SIZE,
+            ),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::East => (
             //&edges[FACE_EAST as usize][chunk_y + chunk_z * CHUNK_SIZE],
-            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_y + chunk_z * CHUNK_SIZE),
+            edges.get(
+                (FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_y + chunk_z * CHUNK_SIZE,
+            ),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::West => (
             //&edges[FACE_EAST as usize][chunk_y + chunk_z * CHUNK_SIZE],
-            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_y + chunk_z * CHUNK_SIZE),
+            edges.get(
+                (FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_y + chunk_z * CHUNK_SIZE,
+            ),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::North => (
             //&edges[FACE_EAST as usize][chunk_x + chunk_y * CHUNK_SIZE],
-            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_y * CHUNK_SIZE),
+            edges.get(
+                (FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_y * CHUNK_SIZE,
+            ),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
         BlockFace::South => (
             //&edges[FACE_EAST as usize][chunk_x + chunk_y * CHUNK_SIZE],
-            edges.get((FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_y * CHUNK_SIZE),
+            edges.get(
+                (FACE_EAST as usize * CHUNK_SIZE * CHUNK_SIZE) + chunk_x + chunk_y * CHUNK_SIZE,
+            ),
             offset_x + offset_y * VOXELS_PER_METER,
         ),
     };
