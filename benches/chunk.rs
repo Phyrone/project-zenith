@@ -1,10 +1,10 @@
 use std::ops::Deref;
 
 use bevy::utils::petgraph::visit::Walker;
-use criterion::{black_box, criterion_group, criterion_main, Bencher, Criterion};
+use criterion::{Bencher, black_box, Criterion, criterion_group, criterion_main};
 
-use game2::chunk::ChunkStorage;
 use game2::CHUNK_VOLUME;
+use game2::storage::Storage;
 
 criterion_group!(benches, chunk);
 
@@ -17,7 +17,7 @@ fn chunk(criterion: &mut Criterion) {
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 struct TestBlock(u128);
 
-type TestChunkStorage = ChunkStorage<TestBlock>;
+type TestChunkStorage = Storage<CHUNK_VOLUME, TestBlock>;
 
 fn bench_empty_chunk_creation(bencher: &mut Bencher) {
     let mut input_data = Box::new([TestBlock::default(); CHUNK_VOLUME]);
@@ -30,7 +30,7 @@ fn bench_empty_chunk_creation(bencher: &mut Bencher) {
 
     bencher.iter(|| {
         let input = black_box(input_data.deref());
-        let chunk_storage = TestChunkStorage::new(input);
+        let chunk_storage = TestChunkStorage::new(&input.to_vec());
         black_box(chunk_storage);
     });
 }
