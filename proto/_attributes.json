@@ -1,0 +1,9 @@
+{
+  "type": {
+    ".": [
+      "#[derive(serde::Serialize,serde::Deserialize)]"
+    ]
+  },
+  "field": {},
+  "enum": {}
+}

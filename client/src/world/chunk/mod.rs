@@ -6,7 +6,8 @@ use bevy::prelude::{App, Component, Plugin, SystemSet};
 pub mod chunk_data;
 pub mod chunk_mesh;
 pub mod grid;
-pub mod voxel2;
+//pub mod voxel2;
+mod voxel3;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldChunksPlugin;

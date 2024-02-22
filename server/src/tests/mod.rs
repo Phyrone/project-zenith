@@ -1,6 +1,6 @@
 use bevy::app::App;
 use deno_core::{
-    FsModuleLoader, JsRuntime, ModuleCode, ModuleSpecifier, PollEventLoopOptions, RuntimeOptions,
+    FsModuleLoader, JsRuntime, ModuleCore, ModuleSpecifier, PollEventLoopOptions, RuntimeOptions, M,
 };
 use std::rc::Rc;
 

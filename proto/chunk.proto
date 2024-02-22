@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package chunk;
+
+import "common.proto";
+
+message ChunkData{
+  repeated common.ResourceKey pallete = 1;
+  repeated bytes data = 2;
+}
+

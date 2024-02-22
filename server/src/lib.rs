@@ -7,6 +7,8 @@ use quinn::VarInt;
 
 mod agent;
 mod extension;
+mod world;
+
 #[cfg(test)]
 mod tests;
 

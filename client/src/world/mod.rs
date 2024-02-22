@@ -5,18 +5,20 @@ use bevy::render::render_resource::VertexFormat;
 
 use crate::world::camera::WorldCameraPlugin;
 use crate::world::chunk::ClientWorldChunksPlugin;
+use crate::world::material::MaterialsPlugin;
 
 pub mod block_data;
 pub mod camera;
 pub mod chunk;
 pub mod material;
+mod blockdata;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldPlugin;
 
 impl Plugin for ClientWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((ClientWorldChunksPlugin, WorldCameraPlugin));
+        app.add_plugins((ClientWorldChunksPlugin, WorldCameraPlugin,MaterialsPlugin));
     }
 }
 

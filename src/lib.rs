@@ -4,8 +4,11 @@ use bevy::prelude::*;
 pub mod compressible;
 pub mod humanize;
 pub mod material;
-pub mod protocol;
+pub mod proto;
 pub mod storage;
+pub mod chunk_compression;
+pub mod lzw;
+pub mod network;
 
 pub const CHUNK_SIZE: usize = 32;
 

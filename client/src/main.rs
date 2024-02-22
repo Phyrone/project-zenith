@@ -8,6 +8,8 @@ use bevy::prelude::{
 };
 use bevy::render::primitives::Frustum;
 use bevy::DefaultPlugins;
+use bevy_framepace::Limiter;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use clap::Parser;
 use error_stack::{Report, ResultExt};
 
@@ -27,9 +29,16 @@ fn main() -> Result<(), Report<ClientStartupError>> {
         .add_plugins(ClientWorldPlugin)
         .add_systems(Startup, test)
         .add_systems(Startup, setup_test_world)
+        .add_plugins(bevy_framepace::FramepacePlugin)
+        .add_plugins(WorldInspectorPlugin::new())
+        .add_systems(Startup, set_frame_limit_system)
         .run();
 
     Ok(())
+}
+
+fn set_frame_limit_system(mut settings: ResMut<bevy_framepace::FramepaceSettings>) {
+    settings.limiter = Limiter::Auto
 }
 
 fn test(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
@@ -43,8 +52,8 @@ fn test(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
             ..default()
         },
         frustum: Frustum { ..default() },
-        transform: Transform::from_xyz(3.0, 10.0, 3.0)
-            .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+        transform: Transform::from_xyz(3.0, 10.0, 3.0),
+        //.looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
         ..default()
     });
 
@@ -70,6 +79,13 @@ fn setup_test_world(
     commands.spawn(PbrBundle {
         mesh: meshes.add(shape::Cube::new(0.5).into()),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        ..default()
+    });
+    //spawn underground
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(shape::Cube::new(0.5).into()),
+        material: materials.add(Color::rgb(0.3, 0.3, 0.5).into()),
+        transform: Transform::from_xyz(0.0, -0.5, 0.0).with_scale(Vec3::new(100.0, 0.01, 100.0)),
         ..default()
     });
 }

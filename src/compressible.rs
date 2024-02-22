@@ -14,8 +14,8 @@ pub struct Compressed<T: serde::Serialize, A> {
 }
 
 impl<T, A> Compressed<T, A>
-where
-    T: serde::Serialize,
+    where
+        T: serde::Serialize,
 {
     pub fn len_data(&self) -> usize {
         self.len
@@ -37,10 +37,12 @@ pub struct ZSTD;
 
 pub struct SNAPPY;
 
+pub struct LZMA;
+
 //TODO add error return types
 pub trait Compressible<T>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
 {
     fn compress_lz4(&self) -> Compressed<T, LZ4>;
 
@@ -55,11 +57,21 @@ where
     fn compress_zstd_with_level(&self, level: i32) -> Compressed<T, ZSTD>;
 
     fn compress_snappy(&self) -> Compressed<T, SNAPPY>;
+
+    fn compress_lzma(&self) -> Compressed<T, LZMA> {
+        self.compress_lzma_with_preset(5)
+    }
+
+    fn compress_lzma_with_preset(&self, preset: u32) -> Compressed<T, LZMA>;
+
+    fn compress_lzma_extreme(&self) -> Compressed<T, LZMA> {
+        self.compress_lzma_with_preset(lzma::EXTREME_PRESET)
+    }
 }
 
 impl<T> Compressible<T> for T
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
 {
     fn compress_lz4(&self) -> Compressed<T, LZ4> {
         let bytes = bincode::serialize(self).expect("failed to serialize data");
@@ -107,11 +119,26 @@ where
             _algorithm: std::marker::PhantomData,
         }
     }
+
+    fn compress_lzma_with_preset(&self, preset: u32) -> Compressed<T, LZMA> {
+        let bytes = bincode::serialize(self).expect("failed to serialize data");
+        let size = bytes.len();
+
+        let mut compressed = lzma::compress(&bytes, preset).unwrap();
+        compressed.shrink_to_fit();
+
+        Compressed {
+            data: compressed,
+            len: size,
+            _type: std::marker::PhantomData,
+            _algorithm: std::marker::PhantomData,
+        }
+    }
 }
 
 impl<T> Compressed<T, LZ4>
-where
-    T: serde::de::DeserializeOwned + serde::Serialize,
+    where
+        T: serde::de::DeserializeOwned + serde::Serialize,
 {
     pub fn decompress(&self) -> T {
         let bytes = lz4_flex::decompress(&self.data, self.len).unwrap();
@@ -120,8 +147,8 @@ where
 }
 
 impl<T> Compressed<T, ZSTD>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
 {
     pub fn decompress(&self) -> T {
         let bytes = zstd::bulk::decompress(&self.data, self.len).unwrap();
@@ -129,9 +156,19 @@ where
     }
 }
 
+impl<T> Compressed<T, LZMA>
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
+{
+    pub fn decompress(&self) -> T {
+        let bytes = lzma::decompress(&self.data).unwrap();
+        bincode::deserialize(&bytes).unwrap()
+    }
+}
+
 impl<T> Compressed<T, SNAPPY>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
 {
     pub fn decompress(&self) -> T {
         let decompressed = snap::raw::Decoder::new()
@@ -164,6 +201,7 @@ mod tests {
             a_bool: true,
         }
     }
+
     #[test]
     fn lz4_compression() {
         let test_struct = create_test_struct();
@@ -195,4 +233,13 @@ mod tests {
         let decompressed = compressed.decompress();
         assert_eq!(test_struct, decompressed);
     }
+
+    #[test]
+    fn lzma_compression() {
+        let test_struct = create_test_struct();
+        let compressed = test_struct.compress_lzma_with_preset(6);
+        let decompressed = compressed.decompress();
+        assert_eq!(test_struct, decompressed);
+    }
+
 }

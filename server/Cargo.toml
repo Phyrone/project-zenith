@@ -24,6 +24,8 @@ opensimplex2 = "1.0.1"
 wtransport = "0.1.10"
 quinn = "0.10.2"
 bevy = { version = "0.12.1", default-features = false, features = ["multi-threaded", "async-io"] }
+webrtc = "0.9.0"
+pathfinding = "4.8.2"
 
 
 [profile.dev]

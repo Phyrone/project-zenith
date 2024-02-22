@@ -3,8 +3,7 @@ use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task};
 
 use crate::world::chunk::chunk_data::ClientChunkData;
-use crate::world::chunk::chunk_data::ClientChunkEdge;
-use crate::world::chunk::voxel2::VoxelChunk;
+use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::RenderingWorldFixedChunk;
 
 //works as follows:
@@ -24,26 +23,23 @@ impl Plugin for ChunkMeshPlugin {
 }
 
 fn build_meshes_system(
-    changed_chunks: Query<
-        (
-            &RenderingWorldFixedChunk,
-            &ClientChunkData,
-            &ClientChunkEdge,
-        ),
-        (Changed<ClientChunkData>, Changed<ClientChunkEdge>),
-    >,
+    commands: ParallelCommands,
+    chunk_grid: Res<ChunkGrid>,
+    chunks : Query<(&ClientChunkData, &RenderingWorldFixedChunk)>,
 ) {
     let pool = AsyncComputeTaskPool::get();
-
-    changed_chunks.par_iter().for_each(|(pos, data, edge)| {
-        let data = data.clone();
-        let edge = edge.clone();
-
-        let task = pool.spawn(async move {
-            let voxels = VoxelChunk::new(data.storage(), edge.storage());
+    
+    chunks.par_iter().for_each(|(data,pos)|{
+        
+        
+        commands.command_scope(|commands|{
+            
         });
     });
+    
 }
+
+
 
 #[derive(Debug, Component)]
 struct ChunkMeshBuildProcess {

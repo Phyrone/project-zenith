@@ -22,10 +22,12 @@ pub const GRID_NEIGHBOUR_MAP: [(i32, i32, i32); 6] = [
 
 impl Plugin for ChunkGridPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (update_updated_to_grid, update_removed_from_grid).in_set(CreateChunkGridLabel),
-        );
+        app
+            .insert_resource(ChunkGrid::default())
+            .add_systems(
+                Update,
+                (update_updated_to_grid, update_removed_from_grid).in_set(CreateChunkGridLabel),
+            );
     }
 }
 

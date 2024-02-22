@@ -8,15 +8,20 @@ message ChunkPosition{
   sint64 x = 0x01;
   sint64 y = 0x02;
   sint64 z = 0x03;
+
+  uint32 dimension = 0x10;
 }
 
 message Position{
   sint64 x = 0x01;
   sint64 y = 0x02;
   sint64 z = 0x03;
-  optional double fine_x = 0x11;
-  optional double fine_y = 0x12;
-  optional double fine_z = 0x13;
+
+  uint32 dimension = 0x10;
+
+  optional double fine_x = 0x21;
+  optional double fine_y = 0x22;
+  optional double fine_z = 0x23;
 }
 
 message Velocity{
@@ -46,5 +51,21 @@ message MessageComponentFormat{
   reserved 7; //Obfuscated
 }
 
+//resource keys can be used to reference resources like blocks, items, entities, etc.
+message ResourceKey{
+  oneof key{
+    //when indexed
+    uint64 index = 0x01;
+    ResourceIdentifier identifier = 0x02;
+  }
+  //additional data is if present encoded in messagepack format
+  optional bytes data = 0x0F;
+}
 
+message ResourceIdentifier{
+  //null = core game
+  optional  string namespace = 0x01;
+  string id = 0x02;
+  optional  uint32 variant = 0x03;
+}
 

@@ -8,14 +8,15 @@ use packedvec::PackedVec;
 use rayon::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Component, serde::Serialize, serde::Deserialize)]
-pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Sync> {
+pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync> {
     palette: Vec<ITEM>,
     data: PackedVec<usize>,
 }
 
+
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
         PackedVec::new(vec![0; SIZE])
@@ -38,8 +39,8 @@ where
 }
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn default() -> Self {
         Self::empty()
@@ -47,8 +48,8 @@ where
 }
 
 impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
     /// creates a storage from an array of items.
     /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
@@ -92,17 +93,10 @@ where
         }
     }
 
-    ///returns an array of all block-(states) in the chunk
-    /// the array is ordered
-    pub fn blocks(&self) -> &[ITEM] {
-        &self.palette
-    }
-
     pub fn set(&mut self, i: usize, block: ITEM) {
         if i >= LIMIT {
             panic!("index out of bounds");
         }
-
         let former_palette_id = unsafe { self.data.get_unchecked(i) };
         let mut unpacked = self.data.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
@@ -117,10 +111,8 @@ where
         if range.end > LIMIT || range.start > LIMIT {
             panic!("index out of bounds");
         }
-
         let mut unpacked = self.data.iter().collect::<Vec<_>>();
         let palette_id = self.get_or_create_pallete_id(block, &mut unpacked);
-
         let maybe_unused = unpacked
             .par_iter_mut()
             .skip(range.start)
@@ -178,10 +170,8 @@ where
         });
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &ITEM> + '_ {
-        self.data
-            .iter()
-            .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
+    pub fn iter<'s>(&'s self) -> impl Iterator<Item=&'s ITEM> + '_ {
+        self.data.iter().map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
     }
 
     ///returns the estimated memory usage in bytes of the chunk including overhead
@@ -196,9 +186,15 @@ where
     pub fn export(&self) -> Vec<ITEM> {
         self.iter().cloned().collect::<Vec<_>>()
     }
+
+    pub fn palette(&self) -> &[ITEM] {
+        &self.palette
+    }
+
+    pub fn data(&self) -> &PackedVec<usize> {
+        &self.data
+    }
 }
 
 #[cfg(test)]
-mod test {
-    
-}
+mod test {}

@@ -1,20 +1,21 @@
 use subenum::subenum;
+use unstructured::Document;
 
 use crate::BlockRotation;
 
 #[subenum(Block)]
 #[derive(
-    Debug,
-    Default,
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    Hash,
-    serde::Serialize,
-    serde::Deserialize,
+Debug,
+Default,
+Copy,
+Clone,
+PartialEq,
+Eq,
+Ord,
+PartialOrd,
+Hash,
+serde::Serialize,
+serde::Deserialize,
 )]
 pub enum Material {
     #[default]
@@ -39,35 +40,45 @@ pub enum Material {
 }
 
 #[derive(
-    Debug,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    Hash,
-    serde::Serialize,
-    serde::Deserialize,
+Debug,
+Default,
+Clone,
+Copy,
+PartialEq,
+Eq,
+Ord,
+PartialOrd,
+Hash,
+serde::Serialize,
+serde::Deserialize,
 )]
 pub struct WoodData {
     rotation: BlockRotation,
 }
 
 #[derive(
-    Debug,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    Hash,
-    serde::Serialize,
-    serde::Deserialize,
+Debug,
+Default,
+Clone,
+Copy,
+PartialEq,
+Eq,
+Ord,
+PartialOrd,
+Hash,
+serde::Serialize,
+serde::Deserialize,
 )]
 pub struct WoodPlanksData {
     rotation: BlockRotation,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize)]
+struct BlockData {
+    material: usize,
+    data: Document,
+}
+
+impl BlockData {
+    
 }

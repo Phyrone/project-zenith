@@ -58,7 +58,8 @@ impl Voxel {
 
     pub fn import(entry: &ChunkDataEntry) -> [Self; VOXEL_BLOCK_VOLUME] {
         match entry {
-            ChunkDataEntry::Block(block) => [Voxel::new(*block); VOXEL_BLOCK_VOLUME],
+            ChunkDataEntry::Block(block) => [Voxel::new(todo!()); VOXEL_BLOCK_VOLUME],
+            ChunkDataEntry::Empty => [Voxel::new(Block::AIR); VOXEL_BLOCK_VOLUME],
         }
     }
 

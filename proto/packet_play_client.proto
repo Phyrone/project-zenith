@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "common.proto";
+/* === Packets === */
+package packet.play.client;
+
+message PacketPlayClient{
+
+
+
+  oneof payload{
+    PacketPlayClientMove move = 0x11;
+    PacketPlayerInteract interact = 0x12;
+
+
+  }
+}
+
+message PacketPlayClientMove{
+  common.Position position = 0x01;
+  common.Rotation rotation = 0x02;
+  common.Velocity velocity = 0x03;
+}
+
+message PacketPlayerInteract{
+  common.Position target = 0x01;
+}
+
+message PacketPlaySendChatMessage{
+  string message = 1;
+}

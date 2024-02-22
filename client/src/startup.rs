@@ -7,7 +7,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Parser, Eq, PartialEq, Hash, Serialize)]
 #[clap(version)]
 pub struct StartupParams {
-    #[clap(short, long, default_value = "info")]
+    #[clap(short, long, default_value = "warn")]
     #[cfg_attr(not(debug_assertions), clap(default_value = "warn"))]
     pub log_level: LevelFilter,
 }
