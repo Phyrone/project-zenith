@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package networking;
+
+enum StreamOpenMode{
+  SINGLE = 0;
+  SEQUENCE = 1;
+  STREAM = 2;
+}

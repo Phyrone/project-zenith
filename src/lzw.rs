@@ -1,6 +1,6 @@
 use packedvec::PackedVec;
 
-pub fn packed_lzw_compress(
+pub fn packed_lzw_compress_no_check(
     //the amount of worlds already used in the dictionary
     dictionary_size: usize,
     data: &PackedVec<usize>,
@@ -41,13 +41,19 @@ pub fn packed_lzw_compress(
             .expect("last current should have been in the dictionary");
         output.push(code);
     }
+    PackedVec::new(output)
+}
 
-    let compressed = PackedVec::new(output);
+pub fn packed_lzw_compress(
+    //the amount of worlds already used in the dictionary
+    dictionary_size: usize,
+    data: &PackedVec<usize>,
+) -> PackedVec<usize> {
+    let compressed = packed_lzw_compress_no_check(dictionary_size, data);
     let old_size = data.bwidth() * data.len();
     let new_size = compressed.bwidth() * compressed.len();
-
     //when the compressed data is not smaller than the original data, we return the original data
-    if new_size >= old_size || data.len() >= compressed.len() {
+    if (new_size >= old_size || compressed.len() >= data.len()) {
         data.to_owned()
     } else {
         compressed
@@ -73,11 +79,11 @@ impl<I, E> LzwCompressIter<I> where I: Iterator<Item=E>, E: Eq + Clone {
         //TODO maybe use content hash?
         match &mut self.current_word {
             None => self.current_word = Some(vec![next.clone()]),
-            Some(current_word)=> {current_word.push(next.clone())}
+            Some(current_word) => { current_word.push(next.clone()) }
         }
-        
+
         let code = self.find_entry();
-        let result:Option<usize>;
+        let result: Option<usize>;
         match code {
             None => {
                 //move the current word to the dictionary
@@ -88,7 +94,6 @@ impl<I, E> LzwCompressIter<I> where I: Iterator<Item=E>, E: Eq + Clone {
                 self.current_code = self.find_entry()
                     .expect("element is not in the base dictionary");
                 self.dictionary.push(current);
-                
             }
             Some(code) => {
                 self.current_code = code;

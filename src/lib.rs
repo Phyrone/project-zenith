@@ -7,7 +7,6 @@ pub mod humanize;
 pub mod material;
 pub mod proto;
 pub mod storage;
-pub mod chunk_compression;
 pub mod lzw;
 pub mod network;
 

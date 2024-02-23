@@ -2,16 +2,26 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::{Not, Range};
 
-use bevy::prelude::Component;
+use bevy::utils::petgraph::visit::Walker;
 use itertools::Itertools;
 use packedvec::PackedVec;
 use rayon::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Component, serde::Serialize, serde::Deserialize)]
-pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync> {
+use crate::lzw::packed_lzw_compress;
+
+pub struct StorageCompressed;
+
+pub struct StorageUncompressed;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+struct DStorage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync, C> {
     palette: Vec<ITEM>,
     data: PackedVec<usize>,
+    _compress: std::marker::PhantomData<C>,
 }
+
+pub type Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync>
+= DStorage<SIZE, ITEM, StorageUncompressed>;
 
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
@@ -29,6 +39,7 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
         Self {
             palette: vec![ITEM::default()],
             data: Self::empty_grid(),
+            _compress: Default::default(),
         }
     }
 
@@ -186,6 +197,13 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
     pub fn export(&self) -> Vec<ITEM> {
         self.iter().cloned().collect::<Vec<_>>()
     }
+    pub fn compress(self) -> CompressedStorage<LIMIT, ITEM> {
+        let data = packed_lzw_compress(self.palette.len(), &self.data);
+        CompressedStorage {
+            palette: self.palette,
+            data,
+        }
+    }
 
     pub fn palette(&self) -> &[ITEM] {
         &self.palette
@@ -194,7 +212,55 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
     pub fn data(&self) -> &PackedVec<usize> {
         &self.data
     }
+    pub fn export_compressed_data(&self) -> Vec<u8> {
+        todo!()
+    }
 }
 
+
+pub type CompressedStorage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync>
+= DStorage<SIZE, ITEM, StorageCompressed>;
+
 #[cfg(test)]
-mod test {}
+mod test {
+    use packedvec::PackedVec;
+    use rand::Rng;
+    use rayon::prelude::*;
+
+    use crate::humanize::humanize_memory;
+    use crate::lzw::packed_lzw_compress;
+
+    #[test]
+    fn test_export() {
+        const materials: usize = 128;
+        const size: usize = 32;
+        let mut numbers = vec![0; size * size * size];
+        numbers.par_iter_mut()
+            .take(size * size * 4 - 1)
+            .for_each(|x| {
+                *x = 13;
+            });
+        numbers.par_iter_mut()
+            .skip(size * size * 4)
+            .take(size * size * 5 - 1)
+            .for_each(|x| {
+                *x = 7;
+            });
+        numbers.par_iter_mut()
+            .skip(size * size * 5)
+            .take(size * size * 2 - 1)
+            .for_each(|x| {
+                let mut rng = rand::thread_rng();
+                let random = rng.gen_range(0..materials);
+                *x = random;
+            });
+
+        let numbers = PackedVec::new(numbers);
+        println!("original: {} * {} = {}", numbers.len(), numbers.bwidth(), humanize_memory((numbers.len() * numbers.bwidth()) / 8));
+        let compressed = packed_lzw_compress(materials, &numbers);
+        println!("compressed: {} * {} = {}", compressed.len(), compressed.bwidth(), humanize_memory((compressed.len() * compressed.bwidth()) / 8));
+        let data = bincode::serialize(&compressed).unwrap();
+        println!("data: {}", humanize_memory(data.len()));
+        println!("  {}", hex::encode(&data));
+    }
+}
