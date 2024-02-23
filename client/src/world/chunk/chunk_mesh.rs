@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use bevy::app::App;
 use bevy::prelude::*;
+use bevy::render::render_asset::RenderAssetUsages;
 use bevy::tasks::{AsyncComputeTaskPool, block_on, Task};
 use futures_lite::future;
 
@@ -82,11 +83,15 @@ fn create_build_mesh_tasks(
             let voxels2 = voxels.clone();
             let mesh_task = pool.spawn(async move {
                 let voxels = voxels.clone();
-                voxels_mesh(&voxels, resolution)
+                //TODO meshes might be needed in main world later for physics
+                voxels_mesh(&voxels, resolution, RenderAssetUsages::RENDER_WORLD)
             });
 
             let greedy_mesh_task =
-                pool.spawn(async move { voxels_geedy_mesh(&voxels2, resolution) });
+                pool.spawn(async move {
+                    //TODO meshes might be needed in main world later for physics
+                    voxels_geedy_mesh(&voxels2, resolution, RenderAssetUsages::RENDER_WORLD)
+                });
 
             let mesh_task = MeshTask::new(mesh_task);
             let greedy_mesh_task = GreedyMeshTask::new(greedy_mesh_task);

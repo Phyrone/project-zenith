@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.12.1",features = ["async-io","multi-threaded"] }
+bevy = { version = "0.13.0",features = ["async-io","multi-threaded"] }
 clap = { version = "4.4.12", features = ["cargo", "derive", "env", "string", "unicode"] }
 error-stack = "0.4.1"
 fast_log = { version = "1.6.10", features = ["zip"] }
@@ -18,7 +18,7 @@ server = { path = "../server" }
 rayon = "1.8.0"
 block-mesh = "0.2.0"
 bitvec = { version = "1.0.1", features = ["serde"] }
-bevy_rapier3d = { version = "0.23.0", features = ["wasm-bindgen", "serde", "parallel", "debug-render"] }
+bevy_rapier3d = { version = "0.25.0", features = ["wasm-bindgen", "serde", "parallel", "debug-render"] }
 serde-big-array = "0.5.1"
 slab = { version = "0.4.9", features = ["serde"] }
 serde_json = "1.0.108"
@@ -27,9 +27,8 @@ wtransport = "0.1.10"
 array-init = "2.1.0"
 fast-voxel-traversal = "0.5.0"
 rclite = "0.2.4"
-bevy_framepace = "0.14.1"
-bevy_egui = "0.24.0"
-bevy-inspector-egui = "0.22.1"
+bevy_egui = "0.25.0"
+bevy-inspector-egui = "0.23.2"
 specs = { version = "0.20.0", features = ["uuid_entity"] }
 unstructured = "0.5.1"
 unique-type-id = "1.3.0"

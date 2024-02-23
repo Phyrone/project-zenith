@@ -1,19 +1,13 @@
 use bevy::app::{App, Startup};
-use bevy::core_pipeline::clear_color::ClearColorConfig;
-use bevy::math::Vec3;
-use bevy::prelude::{
-    default, shape, AmbientLight, Assets, Camera, Camera3d, Camera3dBundle, Color, Commands,
-    DirectionalLight, DirectionalLightBundle, Mesh, PbrBundle, PluginGroup, ResMut,
-    StandardMaterial, Transform,
-};
-use bevy::render::primitives::Frustum;
 use bevy::DefaultPlugins;
-use bevy_framepace::Limiter;
+use bevy::math::Vec3;
+use bevy::prelude::{AmbientLight, Assets, Camera, Camera3d, Camera3dBundle, Color, Commands, Cuboid, default, DirectionalLight, DirectionalLightBundle, Mesh, PbrBundle, PluginGroup, ResMut, StandardMaterial, Transform};
+use bevy::render::primitives::Frustum;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use clap::Parser;
 use error_stack::{Report, ResultExt};
 
-use crate::startup::{init_logger, ClientStartupError, StartupParams};
+use crate::startup::{ClientStartupError, init_logger, StartupParams};
 use crate::world::ClientWorldPlugin;
 
 mod startup;
@@ -24,26 +18,27 @@ fn main() -> Result<(), Report<ClientStartupError>> {
     init_logger(params.log_level).change_context(ClientStartupError::LoggerInit)?;
 
     App::new()
+        .insert_resource(AmbientLight {
+            color: Color::WHITE,
+            brightness: 500.0,
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugins(ClientWorldPlugin)
         .add_systems(Startup, test)
         .add_systems(Startup, setup_test_world)
-        .add_plugins(bevy_framepace::FramepacePlugin)
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, set_frame_limit_system)
         .run();
 
     Ok(())
 }
 
-fn set_frame_limit_system(mut settings: ResMut<bevy_framepace::FramepaceSettings>) {
-    settings.limiter = Limiter::Auto
-}
-
-fn test(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
+fn test(
+    mut commands: Commands,
+    mut ambient_light: ResMut<AmbientLight>,
+) {
     commands.spawn(Camera3dBundle {
         camera_3d: Camera3d {
-            clear_color: ClearColorConfig::Custom(Color::BLACK),
             ..default()
         },
         camera: Camera {
@@ -66,8 +61,8 @@ fn test(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
         ..default()
     });
 
-    ambient_light.color = Color::WHITE;
-    ambient_light.brightness = 0.75;
+    //ambient_light.color = Color::WHITE;
+    //ambient_light.brightness = 0.75;
 }
 
 fn setup_test_world(
@@ -76,15 +71,15 @@ fn setup_test_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Cube::new(0.5).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: meshes.add(Cuboid::new(0.5, 0.5, 0.5)),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
         ..default()
     });
     //spawn underground
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Cube::new(0.5).into()),
-        material: materials.add(Color::rgb(0.3, 0.3, 0.5).into()),
-        transform: Transform::from_xyz(0.0, -0.5, 0.0).with_scale(Vec3::new(100.0, 0.01, 100.0)),
+        mesh: meshes.add(Cuboid::new(100.0, 0.01, 100.0)),
+        material: materials.add(Color::rgb(0.3, 0.3, 0.5)),
+        transform: Transform::from_xyz(0.0, -0.5, 0.0),
         ..default()
     });
 }

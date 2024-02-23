@@ -31,30 +31,31 @@ pub struct WorldCameraPlugin;
 
 impl Plugin for WorldCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<WorldCameraConfiguration>().add_systems(
-            Update,
-            (
-                test_camera_move_mouse_system,
-                test_camera_move_keys_system,
-                jump_rotation_test_cam_system,
-            ),
-        );
+        app.insert_state(WorldCameraConfiguration::default())
+            .add_systems(
+                Update,
+                (
+                    test_camera_move_mouse_system,
+                    test_camera_move_keys_system,
+                    jump_rotation_test_cam_system,
+                ),
+            );
         //.add_plugins(MaterialPlugin);
     }
 }
 
 fn jump_rotation_test_cam_system(
     mut query: Query<&mut Transform, With<Camera>>,
-    keys: Res<Input<KeyCode>>,
+    keys: Res<ButtonInput<KeyCode>>,
 ) {
     for mut transform in query.iter_mut() {
-        if keys.just_pressed(KeyCode::Y) {
+        if keys.just_pressed(KeyCode::KeyY) {
             transform.rotation = Quat::from_rotation_y(PI_32 / 2f32);
         }
-        if keys.just_pressed(KeyCode::X) {
+        if keys.just_pressed(KeyCode::KeyX) {
             transform.rotation = Quat::from_rotation_x(PI_32 / 2f32);
         }
-        if keys.just_pressed(KeyCode::Z) {
+        if keys.just_pressed(KeyCode::KeyZ) {
             transform.rotation = Quat::from_rotation_z(PI_32 / 2f32);
         }
     }
@@ -99,7 +100,7 @@ fn test_camera_move_mouse_system(
 }
 
 fn test_camera_move_keys_system(
-    keys: Res<Input<KeyCode>>,
+    keys: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut Transform, With<Camera>>,
     delta_time: Res<Time>,
 ) {
@@ -112,16 +113,16 @@ fn test_camera_move_keys_system(
     if keys.pressed(KeyCode::Space) {
         up_down += 1.0;
     }
-    if keys.pressed(KeyCode::W) {
+    if keys.pressed(KeyCode::KeyW) {
         forward_back -= 1.0;
     }
-    if keys.pressed(KeyCode::S) {
+    if keys.pressed(KeyCode::KeyS) {
         forward_back += 1.0;
     }
-    if keys.pressed(KeyCode::A) {
+    if keys.pressed(KeyCode::KeyA) {
         left_right -= 1.0;
     }
-    if keys.pressed(KeyCode::D) {
+    if keys.pressed(KeyCode::KeyD) {
         left_right += 1.0;
     }
     if forward_back == 0.0 && left_right == 0.0 && up_down == 0.0 {

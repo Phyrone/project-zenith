@@ -1,10 +1,11 @@
 use bevy::prelude::{Mesh, Query};
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
-use block_mesh::ndshape::RuntimeShape;
+use bevy::render::render_asset::RenderAssetUsages;
 use block_mesh::{
-    GreedyQuadsBuffer, QuadCoordinateConfig, UnitQuadBuffer, VoxelVisibility,
-    RIGHT_HANDED_Y_UP_CONFIG,
+    GreedyQuadsBuffer, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
+    VoxelVisibility,
 };
+use block_mesh::ndshape::RuntimeShape;
 use rayon::prelude::*;
 
 use game2::CHUNK_SIZE;
@@ -236,7 +237,8 @@ pub fn voxels_quads(voxels: &[Voxel], resolution: usize) -> UnitQuadBuffer {
     );
     buffer
 }
-pub fn voxels_mesh(voxels: &[Voxel], resolution: usize) -> Mesh {
+
+pub fn voxels_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAssetUsages) -> Mesh {
     let buffer = voxels_quads(voxels, resolution);
     let size = resolution * CHUNK_SIZE + 2;
 
@@ -280,7 +282,7 @@ pub fn voxels_mesh(voxels: &[Voxel], resolution: usize) -> Mesh {
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, usage);
 
     mesh.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
@@ -299,7 +301,7 @@ pub fn voxels_mesh(voxels: &[Voxel], resolution: usize) -> Mesh {
         VertexAttributeValues::Float32x2(vec![[0.0; 2]; num_vertices]),
     );
 
-    mesh.set_indices(Some(Indices::U32(indices.clone())));
+    mesh.insert_indices(Indices::U32(indices.clone()));
 
     mesh.insert_attribute(MESH_TEXTURE_ATTRIBUTE, VertexAttributeValues::Uint32(data));
 
@@ -328,7 +330,7 @@ pub fn voxels_geedy_quads(voxels: &[Voxel], resolution: usize) -> GreedyQuadsBuf
     buffer
 }
 
-pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize) -> Mesh {
+pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAssetUsages) -> Mesh {
     let buffer = voxels_geedy_quads(voxels, resolution);
     let size = resolution * CHUNK_SIZE + 2;
     //https://github.com/bonsairobo/block-mesh-rs/blob/main/examples-crate/render/main.rs#L5
@@ -366,7 +368,8 @@ pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize) -> Mesh {
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, usage);
 
     mesh.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
@@ -384,9 +387,7 @@ pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize) -> Mesh {
         Mesh::ATTRIBUTE_UV_0,
         VertexAttributeValues::Float32x2(vec![[0.0; 2]; num_vertices]),
     );
-
-    mesh.set_indices(Some(Indices::U32(indices.clone())));
-
+    mesh.insert_indices(Indices::U32(indices));
     mesh.insert_attribute(MESH_TEXTURE_ATTRIBUTE, VertexAttributeValues::Uint32(data));
 
     mesh
