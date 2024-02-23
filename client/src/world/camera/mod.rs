@@ -31,12 +31,17 @@ pub struct WorldCameraPlugin;
 
 impl Plugin for WorldCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<WorldCameraConfiguration>()
-            .add_systems(Update, (test_camera_move_mouse_system, test_camera_move_keys_system, jump_rotation_test_cam_system));
-            //.add_plugins(MaterialPlugin);
+        app.add_state::<WorldCameraConfiguration>().add_systems(
+            Update,
+            (
+                test_camera_move_mouse_system,
+                test_camera_move_keys_system,
+                jump_rotation_test_cam_system,
+            ),
+        );
+        //.add_plugins(MaterialPlugin);
     }
 }
-
 
 fn jump_rotation_test_cam_system(
     mut query: Query<&mut Transform, With<Camera>>,
@@ -65,7 +70,11 @@ fn get_updown_angle(rotation: &Quat) -> f32 {
     flatd.y = 0.0;
     let flatd = flatd.normalize();
     let angle = looking_direction.angle_between(flatd);
-    if is_overrated(rotation) { PI_32 - angle } else { angle }
+    if is_overrated(rotation) {
+        PI_32 - angle
+    } else {
+        angle
+    }
 }
 
 fn test_camera_move_mouse_system(
@@ -123,8 +132,12 @@ fn test_camera_move_keys_system(
         //camera diection on the xz plane
         let camera_direction = transform.local_z();
         let move_speed = 4.0 * delta_time.delta_seconds();
-        let foward_vector = Vec3::new(camera_direction.x, 0.0, camera_direction.z).normalize() * move_speed;
-        let right_vector = Vec3::new(camera_direction.z, 0.0, -camera_direction.x).normalize() * move_speed;
-        transform.translation += foward_vector * forward_back + right_vector * left_right + Vec3::new(0.0, move_speed * up_down, 0.0);
+        let foward_vector =
+            Vec3::new(camera_direction.x, 0.0, camera_direction.z).normalize() * move_speed;
+        let right_vector =
+            Vec3::new(camera_direction.z, 0.0, -camera_direction.x).normalize() * move_speed;
+        transform.translation += foward_vector * forward_back
+            + right_vector * left_right
+            + Vec3::new(0.0, move_speed * up_down, 0.0);
     });
 }

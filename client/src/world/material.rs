@@ -11,7 +11,6 @@ impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {}
 }
 
-
 pub trait BlockClientData {
     fn get_visibility(&self) -> VoxelVisibility;
 }
@@ -25,8 +24,7 @@ impl BlockClientData for Block {
     }
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq, Component)]
-pub struct Material {
+pub struct BlockMaterial {
     pub transparent: bool,
 }

@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
+
 pub mod compressible;
 pub mod humanize;
 pub mod material;
@@ -43,8 +44,8 @@ pub trait ItMustSend {
 }
 
 impl<T> ItMustSend for Expectations<T>
-where
-    T: Send,
+    where
+        T: Send,
 {
     fn it_must_send(&self) -> &Self {
         self
@@ -202,17 +203,17 @@ pub const FACE_SOUTH: u32 = 5;
 //TODO store mirroring bits
 /// represents all possible rottations of a block in a single byte
 #[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    Ord,
-    PartialOrd,
-    Component,
-    serde::Serialize,
-    serde::Deserialize,
+Debug,
+Clone,
+Copy,
+PartialEq,
+Eq,
+Hash,
+Ord,
+PartialOrd,
+Component,
+serde::Serialize,
+serde::Deserialize,
 )]
 pub struct BlockRotation(u8);
 
@@ -284,5 +285,16 @@ mod tests {
             result, 4,
             "Expected 4 for BlockFace::South with size 2 and index 1"
         );
+    }
+}
+
+pub trait WithFixedSizeExt<T> {
+    fn into_fixed_size<const SIZE: usize>(self) -> [T; SIZE];
+}
+
+impl<T> WithFixedSizeExt<T> for Vec<T> {
+    fn into_fixed_size<const SIZE: usize>(self) -> [T; SIZE] {
+        self.try_into()
+            .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length {} but it was {}", SIZE, v.len()))
     }
 }

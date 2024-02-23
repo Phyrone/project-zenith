@@ -1,13 +1,13 @@
-use std::mem::size_of;
 use bevy::prelude::Entity;
+use std::mem::size_of;
 
 use rayon::prelude::*;
 
 use client::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
-use game2::CHUNK_VOLUME;
 use game2::compressible::Compressible;
 use game2::humanize::humanize_memory;
 use game2::material::{Block, WoodData};
+use game2::CHUNK_VOLUME;
 
 #[inline]
 fn create_test_chunk() -> ChunkDataStorage {
@@ -59,7 +59,7 @@ fn test_chunk_compression() {
     let zstd_compressed = chunk.compress_zstd();
     let zstd_best_compressed = chunk.compress_zstd_best();
     let lzma_extreme_compressed = chunk.compress_lzma_extreme();
-    
+
     println!("results:");
     println!(
         "uncompressed:theoretical: {} bytes",
@@ -84,6 +84,4 @@ fn test_chunk_compression() {
         "lzma - extreme: {}",
         humanize_memory(lzma_extreme_compressed.len_compressed())
     );
-    
-    
 }

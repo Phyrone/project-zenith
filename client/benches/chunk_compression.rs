@@ -1,4 +1,4 @@
-use client::world::chunk::chunk_data::{ChunkDataEntry, ClientChunkStorage};
+use client::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use criterion::{black_box, criterion_group, criterion_main, Bencher, Criterion};
 use game2::compressible::Compressible;
 use game2::material::{Block, WoodData, WoodPlanksData};
@@ -31,8 +31,8 @@ fn chunk_compression(criterion: &mut Criterion) {
 }
 
 #[inline]
-fn create_test_chunk() -> ClientChunkStorage {
-    let mut chunk_storage = ClientChunkStorage::empty();
+fn create_test_chunk() -> ChunkDataStorage {
+    let mut chunk_storage = ChunkDataStorage::empty();
 
     //fill half with stone
     chunk_storage.set_many(0..32, 0..20, 0..32, ChunkDataEntry::Block(Block::STONE));

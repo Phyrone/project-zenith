@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.12.1"
+bevy = { version = "0.12.1",features = ["async-io","multi-threaded"] }
 clap = { version = "4.4.12", features = ["cargo", "derive", "env", "string", "unicode"] }
 error-stack = "0.4.1"
 fast_log = { version = "1.6.10", features = ["zip"] }
@@ -34,6 +34,8 @@ specs = { version = "0.20.0", features = ["uuid_entity"] }
 unstructured = "0.5.1"
 unique-type-id = "1.3.0"
 bincode = "1.3.3"
+futures-lite = "2.2.0"
+futures-polling = "0.1.1"
 
 [profile.dev]
 opt-level = 1

@@ -8,17 +8,17 @@ use crate::world::chunk::ClientWorldChunksPlugin;
 use crate::world::material::MaterialsPlugin;
 
 pub mod block_data;
+mod blockdata;
 pub mod camera;
 pub mod chunk;
 pub mod material;
-mod blockdata;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldPlugin;
 
 impl Plugin for ClientWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((ClientWorldChunksPlugin, WorldCameraPlugin,MaterialsPlugin));
+        app.add_plugins((ClientWorldChunksPlugin, WorldCameraPlugin, MaterialsPlugin));
     }
 }
 

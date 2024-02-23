@@ -1832,6 +1832,8 @@ dependencies = [
  "error-stack",
  "fast-voxel-traversal",
  "fast_log",
+ "futures-lite 2.2.0",
+ "futures-polling",
  "game2",
  "log",
  "rayon",
@@ -3000,6 +3002,12 @@ dependencies = [
  "quote",
  "syn 2.0.48",
 ]
+
+[[package]]
+name = "futures-polling"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb4776c5efe2b846f5f92e8bfec9f6fc3ebff89de3ceeb1da83c75ba6bc9a51c"
 
 [[package]]
 name = "futures-sink"

@@ -17,7 +17,6 @@ use crate::startup::{init_logger, ClientStartupError, StartupParams};
 use crate::world::ClientWorldPlugin;
 
 mod startup;
-pub mod utils;
 pub mod world;
 
 fn main() -> Result<(), Report<ClientStartupError>> {
