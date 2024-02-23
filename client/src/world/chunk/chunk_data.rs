@@ -27,8 +27,8 @@ impl Plugin for ChunkDataPlugin {
 /* Systems */
 fn update_neighbor_checksums(
     changes: Query<(&RenderingWorldFixedChunk, &ClientChunkData), Changed<ClientChunkData>>,
-    all_chunks: Query<(&ClientChunkData), With<RenderingWorldFixedChunk>>,
-    mut neighbors: Query<(&mut ChunkNeighborDataValues)>,
+    _all_chunks: Query<&ClientChunkData, With<RenderingWorldFixedChunk>>,
+    mut neighbors: Query<&mut ChunkNeighborDataValues>,
     grid: Res<ChunkGrid>,
 ) {
     for (pos, data) in changes.iter() {

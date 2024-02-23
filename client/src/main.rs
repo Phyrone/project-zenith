@@ -1,7 +1,7 @@
 use bevy::app::{App, Startup};
 use bevy::DefaultPlugins;
 use bevy::math::Vec3;
-use bevy::prelude::{AmbientLight, Assets, Camera, Camera3d, Camera3dBundle, Color, Commands, Cuboid, default, DirectionalLight, DirectionalLightBundle, Mesh, PbrBundle, PluginGroup, ResMut, StandardMaterial, Transform};
+use bevy::prelude::{AmbientLight, Assets, Camera, Camera3d, Camera3dBundle, Color, Commands, Cuboid, default, DirectionalLight, DirectionalLightBundle, Mesh, PbrBundle, ResMut, StandardMaterial, Transform};
 use bevy::render::primitives::Frustum;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use clap::Parser;
@@ -35,7 +35,7 @@ fn main() -> Result<(), Report<ClientStartupError>> {
 
 fn test(
     mut commands: Commands,
-    mut ambient_light: ResMut<AmbientLight>,
+    _ambient_light: ResMut<AmbientLight>,
 ) {
     commands.spawn(Camera3dBundle {
         camera_3d: Camera3d {

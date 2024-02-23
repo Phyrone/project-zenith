@@ -61,9 +61,5 @@ lto = true
 codegen-units = 1
 
 [[bench]]
-name = "chunk_compression"
-harness = false
-
-[[bench]]
-name = "render"
+name = "criterion"
 harness = false

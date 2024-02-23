@@ -70,7 +70,7 @@ impl ChunkDataEntry {
         //TODO resolution and index could be used for more complex entries
         _resolution: usize,
         _index: usize,
-        materials: &Query<(&BlockMaterial)>,
+        materials: &Query<&BlockMaterial>,
     ) -> Voxel {
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
@@ -88,7 +88,7 @@ impl ChunkDataEntry {
 pub fn create_voxel_chunk(
     data: &ChunkDataStorage,
     neighbors: &[Option<&ChunkDataStorage>; 6],
-    materials: &Query<(&BlockMaterial)>,
+    materials: &Query<&BlockMaterial>,
     resolution: usize,
 ) -> Vec<Voxel> {
     let voxel_chunk_size = resolution * CHUNK_SIZE + 2; //+2 for the faces
@@ -146,7 +146,7 @@ fn get_voxel_inner(
     resolution: usize,
     voxel_chunk_size: usize,
     chunk: &ChunkDataStorage,
-    materials: &Query<(&BlockMaterial)>,
+    materials: &Query<&BlockMaterial>,
     into: &mut Voxel,
 ) {
     let inner_index = (x - 1)
@@ -171,7 +171,7 @@ fn get_voxel_face(
     resolution: usize,
     voxel_chunk_size: usize,
     neighbours: &[Option<&ChunkDataStorage>; 6],
-    materials: &Query<(&BlockMaterial)>,
+    materials: &Query<&BlockMaterial>,
     into: &mut Voxel,
 ) {
     let face = if x == 0 {
@@ -269,7 +269,7 @@ pub fn voxels_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAssetUsages
 
             //TODO (insert material data)
             let pos = quad.minimum;
-            let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
+            let _pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
 
             //removed first bit as it stores the transparency
             //let texture_id = self.voxels[pos as usize].0 & 0x7FFFFFFF;
@@ -355,7 +355,7 @@ pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAsset
             normals.extend_from_slice(&face.quad_mesh_normals());
             //TODO (insert material data)
             let pos = quad.minimum;
-            let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
+            let _pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
 
             //removed first bit as it stores the transparency
             //let texture_id = self.voxels[pos as usize].0 & 0x7FFFFFFF;

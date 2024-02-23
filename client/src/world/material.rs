@@ -8,7 +8,7 @@ use game2::material::Block;
 pub struct MaterialsPlugin;
 
 impl Plugin for MaterialsPlugin {
-    fn build(&self, app: &mut App) {}
+    fn build(&self, _app: &mut App) {}
 }
 
 pub trait BlockClientData {

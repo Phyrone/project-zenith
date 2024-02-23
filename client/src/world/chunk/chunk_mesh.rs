@@ -117,7 +117,7 @@ fn apply_calculated_meshes_system(
             block_on(future::poll_once(&mut *mesh_task))
         } else { None };
 
-        let mut greedy_mesh_task = &mut greedy_mesh_task.task;
+        let greedy_mesh_task = &mut greedy_mesh_task.task;
         let got_greedy_mesh = block_on(future::poll_once(&mut *greedy_mesh_task));
 
         if let Some(mesh) = got_greedy_mesh {

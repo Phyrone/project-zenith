@@ -53,7 +53,7 @@ pub struct CustomMaterialVoxelRenderer {}
 pub trait BlockToVoxelMapper {}
 
 mod test {
-    use slab::Slab;
+    
 
     #[test]
     fn a_test() {

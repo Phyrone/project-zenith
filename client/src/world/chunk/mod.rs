@@ -7,7 +7,7 @@ pub mod chunk_data;
 pub mod chunk_mesh;
 pub mod grid;
 //pub mod voxel2;
-mod voxel3;
+pub mod voxel3;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldChunksPlugin;
