@@ -5,7 +5,11 @@ package chunk;
 import "common.proto";
 
 message ChunkData{
+  //must have at least enough entries to make all indexes in data valid
+  //TODO maybe a global palette (world scope)?
   repeated common.ResourceKey pallete = 1;
-  repeated bytes data = 2;
+  //palette indexes <-> lzw <-> big endian <-> huffman (base 256)#
+  //if empty, the first entry of the palette is used for all blocks
+  //if palette is also empty the chunk is considered air(empty)
+  bytes data = 2;
 }
-

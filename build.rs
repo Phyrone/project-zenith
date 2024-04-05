@@ -21,10 +21,10 @@ fn main() -> Result<(), Report<BuildError>> {
 
     for file in filewalk {
         if file.metadata().change_context(BuildError)?.is_file() {
-            let path = std::fs::canonicalize(file.path())
-                .change_context(BuildError)?;
+            let path = std::fs::canonicalize(file.path()).change_context(BuildError)?;
 
-            let path_name = path.to_str()
+            let path_name = path
+                .to_str()
                 .expect("Failed to convert path to string for proto file");
             if let Some(ext) = path.extension() {
                 if ext == "proto" {
@@ -34,40 +34,45 @@ fn main() -> Result<(), Report<BuildError>> {
         }
     }
 
-    let proto_files = proto_files.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
-    let mut parents = proto_files.iter().map(|s| path::Path::new(s).parent()
-        .expect("Failed to get parent of proto file")
-        .to_str()
-        .expect("Failed to convert parent path to string")
-    ).collect::<Vec<&str>>();
-
+    let proto_files = proto_files
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<&str>>();
+    let mut parents = proto_files
+        .iter()
+        .map(|s| {
+            path::Path::new(s)
+                .parent()
+                .expect("Failed to get parent of proto file")
+                .to_str()
+                .expect("Failed to convert parent path to string")
+        })
+        .collect::<Vec<&str>>();
 
     parents.dedup();
     let mut protoc = Config::new();
-    protoc.out_dir("src/proto")
+    protoc
+        .out_dir("src/proto")
         .format(true)
         .compile_well_known_types()
         .format(true)
         .enable_type_names()
         .include_file("_all.rs");
-    
-    load_attributes(&mut protoc)
-        .change_context(BuildError)?;
 
-    protoc.compile_protos(&proto_files, &parents)
+    load_attributes(&mut protoc).change_context(BuildError)?;
+
+    protoc
+        .compile_protos(&proto_files, &parents)
         .change_context(BuildError)?;
     Ok(())
 }
 
-fn load_attributes(
-    config: &mut Config
-) -> Result<(), Report<LoadAttributesError>> {
+fn load_attributes(config: &mut Config) -> Result<(), Report<LoadAttributesError>> {
     let path = path::PathBuf::from("proto/_attributes.json");
-    let file = std::fs::File::open(path)
-        .change_context(LoadAttributesError)?;
+    let file = std::fs::File::open(path).change_context(LoadAttributesError)?;
 
-    let attributes = serde_json::from_reader::<_, AttributesConfig>(file)
-        .change_context(LoadAttributesError)?;
+    let attributes =
+        serde_json::from_reader::<_, AttributesConfig>(file).change_context(LoadAttributesError)?;
 
     for (key, value) in attributes.type_attributes {
         for value in value {
@@ -84,7 +89,6 @@ fn load_attributes(
             config.enum_attribute(key.clone(), value.clone());
         }
     }
-
 
     Ok(())
 }

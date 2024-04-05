@@ -4,7 +4,7 @@ use bevy::prelude::{
 };
 use bimap::BiHashMap;
 
-use crate::world::chunk::RenderingWorldFixedChunk;
+use crate::world::chunk::VoxelWorldFixedChunkPosition;
 
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, SystemSet)]
 pub struct CreateChunkGridLabel;
@@ -12,10 +12,10 @@ pub struct CreateChunkGridLabel;
 pub struct ChunkGridPlugin;
 
 pub const GRID_NEIGHBOUR_MAP: [(i32, i32, i32); 6] = [
-    (0, 1, 0),
-    (0, -1, 0),
     (-1, 0, 0),
     (1, 0, 0),
+    (0, 1, 0),
+    (0, -1, 0),
     (0, 0, 1),
     (0, 0, -1),
 ];
@@ -40,22 +40,19 @@ impl ChunkGrid {
         self.chunks.get_by_left(&(x, y, z)).copied()
     }
 
-    ///returns an array of all 6 neighbours of the given chunk
-    /// 1. up
-    /// 2. down
-    /// 3. left
-    /// 4. right
-    /// 5. front
-    /// 6. back
-    /// if a neighbour is not present in the grid it will be None
-    /// the chunk given by x,y,z does not have to be in the grid
     pub fn neighbours(&self, x: i64, y: i64, z: i64) -> [Option<Entity>; 6] {
         [
-            self.get(x, y + 1, z),
-            self.get(x, y - 1, z),
-            self.get(x - 1, y, z),
+            //east
             self.get(x + 1, y, z),
+            //west
+            self.get(x - 1, y, z),
+            //north
+            self.get(x, y + 1, z),
+            //south
+            self.get(x, y - 1, z),
+            //up
             self.get(x, y, z + 1),
+            //down
             self.get(x, y, z - 1),
         ]
     }
@@ -63,7 +60,7 @@ impl ChunkGrid {
 
 fn update_updated_to_grid(
     grid_res: ResMut<ChunkGrid>,
-    chunks: Query<(Entity, &RenderingWorldFixedChunk), Changed<RenderingWorldFixedChunk>>,
+    chunks: Query<(Entity, &VoxelWorldFixedChunkPosition), Changed<VoxelWorldFixedChunkPosition>>,
 ) {
     if chunks.is_empty() {
         return;
@@ -76,7 +73,7 @@ fn update_updated_to_grid(
 
 fn update_removed_from_grid(
     grid_res: ResMut<ChunkGrid>,
-    mut chunks: RemovedComponents<RenderingWorldFixedChunk>,
+    mut chunks: RemovedComponents<VoxelWorldFixedChunkPosition>,
 ) {
     if chunks.is_empty() {
         return;

@@ -1,62 +1,72 @@
-use bevy::prelude::{Mesh, Query};
+use std::sync::Arc;
+
+use bevy::log::trace;
+use bevy::prelude::Mesh;
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 use bevy::render::render_asset::RenderAssetUsages;
-use block_mesh::{
-    GreedyQuadsBuffer, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
-    VoxelVisibility,
-};
+use bevy::render::render_resource::Face;
+use bevy::utils::petgraph::visit::Walker;
 use block_mesh::ndshape::RuntimeShape;
+use block_mesh::VoxelVisibility::Translucent;
+use block_mesh::{
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, UnorientedQuad,
+    VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
+};
+use hashbrown::HashMap;
+use itertools::Itertools;
 use rayon::prelude::*;
 
-use game2::CHUNK_SIZE;
+use game2::bundle::Bundle;
+use game2::mono_bundle::MonoBundle;
+use game2::{Direction, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
-use crate::world::material::BlockMaterial;
-use crate::world::MESH_TEXTURE_ATTRIBUTE;
+use crate::world::chunk::TextureIden;
+use crate::world::material::{MaterialRegistry};
 
 const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
+pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
+
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Voxel {
-    data: Option<VoxelData>,
+    id: u32,
 }
-
 impl Voxel {
     pub fn empty() -> Self {
-        Self { data: None }
+        Self { id: 0 }
     }
-    pub fn of(id: u32, material: &BlockMaterial) -> Voxel {
-        Voxel {
-            data: Some(VoxelData {
-                id,
-                material: material.clone(),
-            }),
-        }
-    }
-}
 
-#[derive(Debug, Eq, PartialEq, Clone)]
-struct VoxelData {
-    id: u32,
-    material: BlockMaterial,
+    pub fn of(id: u32, translucent: bool) -> Self {
+        let mut id = id;
+        if translucent {
+            id |= 1 << 31;
+        }
+
+        Self { id }
+    }
+    fn translucent(&self) -> bool {
+        return (self.id & 1 << 31) != 0;
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id & !(0b111 << 29)
+    }
 }
 
 impl block_mesh::Voxel for Voxel {
     fn get_visibility(&self) -> VoxelVisibility {
-        match &self.data {
-            None => VoxelVisibility::Empty,
-            Some(data) => {
-                if data.material.transparent {
-                    VoxelVisibility::Translucent
-                } else {
-                    VoxelVisibility::Opaque
-                }
-            }
+        if self.id == 0 {
+            VoxelVisibility::Empty
+        } else if self.translucent() {
+            VoxelVisibility::Translucent
+        } else {
+            VoxelVisibility::Opaque
         }
     }
 }
 
-impl<'render> block_mesh::MergeVoxel for Voxel {
+impl block_mesh::MergeVoxel for Voxel {
     type MergeValue = Voxel;
 
     fn merge_value(&self) -> Self::MergeValue {
@@ -70,25 +80,34 @@ impl ChunkDataEntry {
         //TODO resolution and index could be used for more complex entries
         _resolution: usize,
         _index: usize,
-        materials: &Query<&BlockMaterial>,
+        materials: &MaterialRegistry,
     ) -> Voxel {
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
-            ChunkDataEntry::Block(entity, _) => {
-                let material = materials.get(*entity).ok();
-                match material {
-                    None => Voxel::empty(),
-                    Some(material) => Voxel::of(entity.index(), material),
+            ChunkDataEntry::Block(material, _) => {
+                let bundle = materials.get_bundle(*material);
+                match bundle {
+                    //TODO replace with not found material
+                    None => return Voxel::empty(),
+                    Some(bundle) => {
+                        let btt = bundle
+                            .get::<BlockTextureDiversity>()
+                            .map(|btt| *btt)
+                            .unwrap_or_default();
+
+                        //TODO check is the material is translucent
+                        Voxel::of(*material as u32, false)
+                    }
                 }
             }
         }
     }
 }
 
-pub fn create_voxel_chunk(
-    data: &ChunkDataStorage,
+pub fn create_voxel_chunk<'storage>(
+    data: &'storage ChunkDataStorage,
     neighbors: &[Option<&ChunkDataStorage>; 6],
-    materials: &Query<&BlockMaterial>,
+    materials: &MaterialRegistry,
     resolution: usize,
 ) -> Vec<Voxel> {
     let voxel_chunk_size = resolution * CHUNK_SIZE + 2; //+2 for the faces
@@ -100,12 +119,14 @@ pub fn create_voxel_chunk(
             (i / voxel_chunk_size) % voxel_chunk_size,
             i / (voxel_chunk_size * voxel_chunk_size),
         );
+
         let mode = (x == 0) as i8
             + (y == 0) as i8
             + (z == 0) as i8
             + (x == voxel_chunk_size - 1) as i8
             + (y == voxel_chunk_size - 1) as i8
             + (z == voxel_chunk_size - 1) as i8;
+
         //skip edges
         match mode {
             //inner
@@ -146,7 +167,7 @@ fn get_voxel_inner(
     resolution: usize,
     voxel_chunk_size: usize,
     chunk: &ChunkDataStorage,
-    materials: &Query<&BlockMaterial>,
+    materials: &MaterialRegistry,
     into: &mut Voxel,
 ) {
     let inner_index = (x - 1)
@@ -171,141 +192,58 @@ fn get_voxel_face(
     resolution: usize,
     voxel_chunk_size: usize,
     neighbours: &[Option<&ChunkDataStorage>; 6],
-    materials: &Query<&BlockMaterial>,
+    materials: &MaterialRegistry,
     into: &mut Voxel,
 ) {
-    let face = if x == 0 {
-        0
-    } else if y == 0 {
-        1
-    } else if z == 0 {
-        2
+    //0 = east
+    //1 = west
+    //2 = north
+    //3 = south
+    //4 = up
+    //5 = down
+
+    let direction = if x == 0 {
+        Direction::West
     } else if x == voxel_chunk_size - 1 {
-        3
+        Direction::East
+    } else if y == 0 {
+        Direction::Down
     } else if y == voxel_chunk_size - 1 {
-        4
+        Direction::Up
+    } else if z == 0 {
+        Direction::South
     } else if z == voxel_chunk_size - 1 {
-        5
+        Direction::North
     } else {
         unreachable!()
     };
-    let neighbour = neighbours[face];
+    let neighbour = neighbours[direction as usize];
     let neighbour = match neighbour {
         None => return,
         Some(neighbour) => neighbour,
     };
-    let entry_index = match face {
-        0 => {
-            (voxel_chunk_size - 2) * (voxel_chunk_size - 2) * (z - 1)
-                + (y - 1) * (voxel_chunk_size - 2)
-        }
-        1 => (voxel_chunk_size - 2) * (voxel_chunk_size - 2) * (z - 1) + (x - 1),
-        2 => (voxel_chunk_size - 2) * (y - 1) + (x - 1),
-        3 => {
-            (voxel_chunk_size - 2) * (voxel_chunk_size - 2) * (z - 1)
-                + (y - 1) * (voxel_chunk_size - 2)
-        }
-        4 => (voxel_chunk_size - 2) * (voxel_chunk_size - 2) * (z - 1) + (x - 1),
-        5 => (voxel_chunk_size - 2) * (y - 1) + (x - 1),
-        _ => unreachable!(),
+    let face_dimension = voxel_chunk_size - 2;
+    //let (voxel_x,voxel_y,voxel_z) = ((x-1)/resolution, (y-1)/resolution, (z-1)/resolution);
+    let (voxel_x, voxel_y, voxel_z) = match direction {
+        Direction::East => (0, (y - 1) / resolution, (z - 1) / resolution),
+        Direction::West => (CHUNK_SIZE - 1, (y - 1) / resolution, (z - 1) / resolution),
+        Direction::Up => ((x - 1) / resolution, 0, (z - 1) / resolution),
+        Direction::Down => ((x - 1) / resolution, CHUNK_SIZE - 1, (z - 1) / resolution),
+        Direction::North => ((x - 1) / resolution, (y - 1) / resolution, 0),
+        Direction::South => ((x - 1) / resolution, (y - 1) / resolution, CHUNK_SIZE - 1),
     };
-    let entry = neighbour.get(entry_index);
-    let sub_index = match face {
-        0 => (y - 1) * (voxel_chunk_size - 2) + (z - 1),
-        1 => (x - 1) * (voxel_chunk_size - 2) + (z - 1),
-        2 => (x - 1) * (voxel_chunk_size - 2) + (y - 1),
-        3 => (y - 1) * (voxel_chunk_size - 2) + (z - 1),
-        4 => (x - 1) * (voxel_chunk_size - 2) + (z - 1),
-        5 => (x - 1) * (voxel_chunk_size - 2) + (y - 1),
-        _ => unreachable!(),
+
+    let (target_x, target_y, target_z) = match direction {
+        Direction::West => (CHUNK_SIZE - 1, voxel_y, voxel_z),
+        Direction::East => (0, voxel_y, voxel_z),
+        Direction::Down => (voxel_x, CHUNK_SIZE - 1, voxel_z),
+        Direction::Up => (voxel_x, 0, voxel_z),
+        Direction::South => (voxel_x, voxel_y, 0),
+        Direction::North => (voxel_x, voxel_y, CHUNK_SIZE - 1),
     };
-    *into = entry.create_voxel(resolution, sub_index, materials);
-}
-
-pub fn voxels_quads(voxels: &[Voxel], resolution: usize) -> UnitQuadBuffer {
-    let size = resolution * CHUNK_SIZE;
-    let shape = [size as u32, size as u32, size as u32];
-    let voxel_chunk_shape = RuntimeShape::<u32, 3>::new(shape);
-    let mut buffer = UnitQuadBuffer::new();
-    block_mesh::visible_block_faces(
-        voxels,
-        &voxel_chunk_shape,
-        [0; 3],
-        [size as u32 - 1; 3],
-        &COORDS_CONFIG.faces,
-        &mut buffer,
-    );
-    buffer
-}
-
-pub fn voxels_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAssetUsages) -> Mesh {
-    let buffer = voxels_quads(voxels, resolution);
-    let size = resolution * CHUNK_SIZE + 2;
-
-    //https://github.com/bonsairobo/block-mesh-rs/blob/main/examples-crate/render/main.rs#L5
-    let num_indices = buffer.num_quads() * 6;
-    let num_vertices = buffer.num_quads() * 4;
-    let mut indices = Vec::with_capacity(num_indices);
-    let mut positions = Vec::with_capacity(num_vertices);
-    let mut normals = Vec::with_capacity(num_vertices);
-    let mut data = Vec::<u32>::with_capacity(num_vertices);
-
-    for (group, face) in buffer
-        .groups
-        .as_ref()
-        .iter()
-        .zip(COORDS_CONFIG.faces.iter())
-    {
-        for quad in group.iter() {
-            indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
-            let quad = block_mesh::UnorientedQuad {
-                minimum: quad.minimum,
-                width: 1,
-                height: 1,
-            };
-
-            positions.extend_from_slice(&face.quad_mesh_positions(&quad, 1.0 / resolution as f32));
-            normals.extend_from_slice(&face.quad_mesh_normals());
-
-            //TODO (insert material data)
-            let pos = quad.minimum;
-            let _pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
-
-            //removed first bit as it stores the transparency
-            //let texture_id = self.voxels[pos as usize].0 & 0x7FFFFFFF;
-
-            //set first 3 bits to the face index
-            let texture_id = 0;
-            //TODO get texture id for material
-
-            data.extend_from_slice(&[texture_id; 4]);
-        }
-    }
-
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, usage);
-
-    mesh.insert_attribute(
-        Mesh::ATTRIBUTE_POSITION,
-        VertexAttributeValues::Float32x3(positions),
-    );
-    //render_mesh.set_attribute("Vertex_Position", VertexAttributeValues::Float32x3(positions), );
-
-    mesh.insert_attribute(
-        Mesh::ATTRIBUTE_NORMAL,
-        VertexAttributeValues::Float32x3(normals),
-    );
-    //render_mesh.set_attribute("Vertex_Normal", VertexAttributeValues::Float32x3(normals));
-
-    mesh.insert_attribute(
-        Mesh::ATTRIBUTE_UV_0,
-        VertexAttributeValues::Float32x2(vec![[0.0; 2]; num_vertices]),
-    );
-
-    mesh.insert_indices(Indices::U32(indices.clone()));
-
-    mesh.insert_attribute(MESH_TEXTURE_ATTRIBUTE, VertexAttributeValues::Uint32(data));
-
-    mesh
+    let target_i = target_x + target_y * CHUNK_SIZE + target_z * CHUNK_SIZE * CHUNK_SIZE;
+    let neighbor_target_entry = neighbour.get(target_i);
+    *into = neighbor_target_entry.create_voxel(resolution, 0, materials);
 }
 
 pub fn voxels_geedy_quads(voxels: &[Voxel], resolution: usize) -> GreedyQuadsBuffer {
@@ -318,6 +256,7 @@ pub fn voxels_geedy_quads(voxels: &[Voxel], resolution: usize) -> GreedyQuadsBuf
 
     let shape = [size as u32, size as u32, size as u32];
     let voxel_chunk_shape = RuntimeShape::<u32, 3>::new(shape);
+
     let mut buffer = GreedyQuadsBuffer::new(size * size * size);
     block_mesh::greedy_quads(
         voxels,
@@ -329,17 +268,172 @@ pub fn voxels_geedy_quads(voxels: &[Voxel], resolution: usize) -> GreedyQuadsBuf
     );
     buffer
 }
+pub fn voxels_quads(voxels: &[Voxel], resolution: usize) -> UnitQuadBuffer {
+    let size = resolution * CHUNK_SIZE + 2;
+    assert_eq!(
+        voxels.len(),
+        size * size * size,
+        "amount of voxels does not match resolution and chunk size"
+    );
+
+    let shape = [size as u32, size as u32, size as u32];
+    let voxel_chunk_shape = RuntimeShape::<u32, 3>::new(shape);
+
+    let mut buffer = UnitQuadBuffer::new();
+    block_mesh::visible_block_faces(
+        voxels,
+        &voxel_chunk_shape,
+        [0; 3],
+        [size as u32 - 1; 3],
+        &COORDS_CONFIG.faces,
+        &mut buffer,
+    );
+    buffer
+}
+
+pub fn voxels_grouped_mesh(
+    voxels: &[Voxel],
+    resolution: usize,
+    usage: RenderAssetUsages,
+) -> GroupedVoxelMeshes {
+    let buffer = voxels_quads(voxels, resolution);
+    let size = resolution * CHUNK_SIZE + 2;
+    let buffer = unit_quads_to_greedy_quads(buffer);
+
+    construct_grouped_mesh(&buffer, voxels, usage, resolution, size)
+}
 
 pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAssetUsages) -> Mesh {
     let buffer = voxels_geedy_quads(voxels, resolution);
     let size = resolution * CHUNK_SIZE + 2;
+    quads_buffer_to_mesh(&buffer, usage, resolution, size)
+}
+
+pub fn voxels_grouped_greedy_mesh(
+    voxels: &[Voxel],
+    resolution: usize,
+    usage: RenderAssetUsages,
+) -> GroupedVoxelMeshes {
+    trace!("creating mesh buffer");
+    let time = std::time::Instant::now();
+    let buffer = voxels_geedy_quads(voxels, resolution);
+    let time = time.elapsed();
+    trace!("created mesh buffer in {:?}", time);
+
+    let size = resolution * CHUNK_SIZE + 2;
+    trace!("constructing grouped mesh");
+    let time = std::time::Instant::now();
+    let grouped = construct_grouped_mesh(&buffer, voxels, usage, resolution, size);
+    let time = time.elapsed();
+    trace!("constructed grouped mesh in {:?}", time);
+
+    grouped
+}
+
+/// uses a greedy quads buffer to create multiple meshes grouped by material
+pub fn construct_grouped_mesh(
+    buffer: &GreedyQuadsBuffer,
+    voxel_chunk: &[Voxel],
+    usage: RenderAssetUsages,
+    resolution: usize,
+    size: usize,
+) -> GroupedVoxelMeshes {
+    let quads = buffer
+        .quads
+        .groups
+        .par_iter()
+        .zip(COORDS_CONFIG.faces.par_iter())
+        .map(|(quads, face)| {
+            let direction = direction_from_oriented_block_face(face);
+            quads.into_par_iter().map(|quad| {
+                let pos = quad.minimum;
+                let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
+                let voxel = &voxel_chunk[pos as usize];
+                (TextureIden::new(voxel.id(), direction), quad,face.clone())
+            })
+        }).flatten()
+        .collect::<Vec<_>>();
+
+    //create meshes grouped by material
+    #[derive(Default)]
+    struct MeshPrep {
+        indices: Vec<u32>,
+        positions: Vec<[f32; 3]>,
+        normals: Vec<[f32; 3]>,
+        uvs: Vec<[f32; 2]>,
+    }
+
+    let mut groups = HashMap::<TextureIden, MeshPrep>::new();
+    for (iden, quad, face) in quads {
+        let prep = groups.entry(iden).or_default();
+        prep.indices
+            .extend_from_slice(&face.quad_mesh_indices(prep.positions.len() as u32));
+        prep.positions
+            .extend_from_slice(&face.quad_mesh_positions(quad, 1.0 / resolution as f32));
+        prep.normals.extend_from_slice(&face.quad_mesh_normals());
+        //prep.uvs.extend_from_slice(&[[0.0; 2]; 4]);
+        prep.uvs
+            .extend_from_slice(&[[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]);
+    }
+
+    let groups = groups
+        .into_iter()
+        .map(|(iden, prep)| {
+            (
+                iden,
+                construct_mesh(prep.indices, prep.positions, prep.normals, prep.uvs, usage),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    groups
+}
+
+#[inline]
+fn construct_mesh(
+    mut indices: Vec<u32>,
+    mut positions: Vec<[f32; 3]>,
+    mut normals: Vec<[f32; 3]>,
+    mut uvs: Vec<[f32; 2]>,
+    usage: RenderAssetUsages,
+) -> Mesh {
+    //shrink the vectors so they don't take up unnecessary space when passed to the mesh
+    indices.shrink_to_fit();
+    positions.shrink_to_fit();
+    normals.shrink_to_fit();
+    uvs.shrink_to_fit();
+
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, usage);
+
+    mesh.insert_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        VertexAttributeValues::Float32x3(positions),
+    );
+    //render_mesh.set_attribute("Vertex_Position", VertexAttributeValues::Float32x3(positions), );
+    mesh.insert_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        VertexAttributeValues::Float32x3(normals),
+    );
+    //render_mesh.set_attribute("Vertex_Normal", VertexAttributeValues::Float32x3(normals));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
+    mesh.insert_indices(Indices::U32(indices));
+
+    mesh
+}
+
+pub fn quads_buffer_to_mesh(
+    buffer: &GreedyQuadsBuffer,
+    usage: RenderAssetUsages,
+    resolution: usize,
+    size: usize,
+) -> Mesh {
     //https://github.com/bonsairobo/block-mesh-rs/blob/main/examples-crate/render/main.rs#L5
     let num_indices = buffer.quads.num_quads() * 6;
     let num_vertices = buffer.quads.num_quads() * 4;
     let mut indices = Vec::with_capacity(num_indices);
     let mut positions = Vec::with_capacity(num_vertices);
     let mut normals = Vec::with_capacity(num_vertices);
-    let mut data = Vec::<u32>::with_capacity(num_vertices);
+    //let mut data = Vec::<u32>::with_capacity(num_vertices);
 
     for (group, face) in buffer
         .quads
@@ -348,7 +442,7 @@ pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAsset
         .iter()
         .zip(COORDS_CONFIG.faces.iter())
     {
-        for quad in group.into_iter() {
+        for quad in group.iter() {
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
             positions.extend_from_slice(&face.quad_mesh_positions(&quad, 1.0 / resolution as f32));
 
@@ -357,17 +451,12 @@ pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAsset
             let pos = quad.minimum;
             let _pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
 
-            //removed first bit as it stores the transparency
-            //let texture_id = self.voxels[pos as usize].0 & 0x7FFFFFFF;
-
-            //set first 3 bits to the face index
-            let texture_id = 0;
+            //let texture_id = 0;
             //TODO get texture id for material
 
-            data.extend_from_slice(&[texture_id; 4]);
+            //data.extend_from_slice(&[texture_id; 4]);
         }
     }
-
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, usage);
 
@@ -388,9 +477,41 @@ pub fn voxels_geedy_mesh(voxels: &[Voxel], resolution: usize, usage: RenderAsset
         VertexAttributeValues::Float32x2(vec![[0.0; 2]; num_vertices]),
     );
     mesh.insert_indices(Indices::U32(indices));
-    mesh.insert_attribute(MESH_TEXTURE_ATTRIBUTE, VertexAttributeValues::Uint32(data));
+    //mesh.insert_attribute(MESH_TEXTURE_ATTRIBUTE, VertexAttributeValues::Uint32(data));
 
     mesh
+}
+
+fn unit_quads_to_greedy_quads(buffer: UnitQuadBuffer) -> GreedyQuadsBuffer {
+    //let size = buffer.num_quads();
+    let mut greedy = GreedyQuadsBuffer::new(0);
+    greedy
+        .quads
+        .groups
+        .par_iter_mut()
+        .zip(buffer.groups.into_par_iter())
+        .for_each(|(group, unit_group)| {
+            unit_group
+                .into_par_iter()
+                .map(|unit_quad| UnorientedQuad::from(unit_quad))
+                .collect_into_vec(group);
+        });
+
+    greedy
+}
+
+#[inline]
+fn direction_from_oriented_block_face(oriented_block_face: &OrientedBlockFace) -> Direction {
+    let normal = oriented_block_face.signed_normal();
+    match [normal.x, normal.y, normal.z] {
+        [0, 1, 0] => Direction::Up,
+        [0, -1, 0] => Direction::Down,
+        [1, 0, 0] => Direction::East,
+        [-1, 0, 0] => Direction::West,
+        [0, 0, 1] => Direction::South,
+        [0, 0, -1] => Direction::North,
+        _ => unreachable!("normal vector is not a unit vector"),
+    }
 }
 
 #[cfg(test)]
@@ -403,7 +524,6 @@ mod test {
 
     #[test]
     fn voxel_size() {
-        let size = size_of::<Voxel>();
-        println!("Size of Voxel: {}", humanize_memory(size));
+        println!("Size of Voxel: {}", humanize_memory(size_of::<Voxel>()));
     }
 }

@@ -4,9 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use game2::CHUNK_SIZE;
 
-
 use crate::world::block::BlockData;
-
 
 #[derive(Debug, Clone, Component, Serialize, Deserialize, Hash, Ord, PartialOrd, PartialEq, Eq)]
 pub struct ChunkBlockData {
@@ -15,20 +13,16 @@ pub struct ChunkBlockData {
 
 #[cfg(test)]
 mod test {
-    use std::mem::size_of;
-    use bevy::prelude::Entity;
-    use rand::Rng;
-    use game2::compressible::{Compressed, Compressible, LZ4, ZSTD};
     use super::*;
-
+    use bevy::prelude::Entity;
+    use game2::compressible::{Compressed, Compressible, LZ4, ZSTD};
+    use rand::Rng;
+    use std::mem::size_of;
 
     #[test]
     fn a() {
         let mut a = ChunkBlockData {
-            blocks: Box::new(
-                [[[BlockData::default(); CHUNK_SIZE]; CHUNK_SIZE];
-                    CHUNK_SIZE],
-            ),
+            blocks: Box::new([[[BlockData::default(); CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE]),
         };
 
         for x in 0..CHUNK_SIZE {
@@ -65,4 +59,3 @@ mod test {
         );
     }
 }
-

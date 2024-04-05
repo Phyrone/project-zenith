@@ -10,10 +10,6 @@ impl Plugin for CoreMaterialPlugins {
     }
 }
 
-fn apply_default_materials(mut commands: Commands) {
+fn apply_default_materials(mut commands: Commands) {}
 
-}
-
-pub struct MaterialRegistry{
-
-}
+pub struct MaterialRegistry {}

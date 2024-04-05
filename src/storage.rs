@@ -1,32 +1,31 @@
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use std::io::{Read, Write};
 use std::ops::{Not, Range};
 
 use bevy::utils::petgraph::visit::Walker;
+use huffman_coding::HuffmanWriter;
 use itertools::Itertools;
 use packedvec::PackedVec;
 use rayon::prelude::*;
 
-use crate::lzw::packed_lzw_compress;
+use crate::lzw::{lzw_compress_raw, lzw_decompress};
 
 pub struct StorageCompressed;
 
 pub struct StorageUncompressed;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-struct DStorage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync, C> {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive()]
+pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync> {
     palette: Vec<ITEM>,
     data: PackedVec<usize>,
-    _compress: std::marker::PhantomData<C>,
 }
 
-pub type Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync>
-= DStorage<SIZE, ITEM, StorageUncompressed>;
-
-
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
         PackedVec::new(vec![0; SIZE])
@@ -39,7 +38,6 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
         Self {
             palette: vec![ITEM::default()],
             data: Self::empty_grid(),
-            _compress: Default::default(),
         }
     }
 
@@ -49,9 +47,11 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
     }
 }
 
+
+
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn default() -> Self {
         Self::empty()
@@ -59,8 +59,8 @@ impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
 }
 
 impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
     /// creates a storage from an array of items.
     /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
@@ -97,10 +97,14 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
 
     pub fn get(&self, i: usize) -> &ITEM {
         let item = self.data.get(i);
-        if let Some(item) = item {
-            return self.palette.get(item).unwrap();
+        if let Some(item_index) = item {
+            return self.palette.get(item_index).unwrap();
         } else {
-            panic!("index out of bounds");
+            panic!(
+                "storage index out of bounds (index: {} of {})",
+                i,
+                self.data.len()
+            );
         }
     }
 
@@ -181,8 +185,10 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         });
     }
 
-    pub fn iter<'s>(&'s self) -> impl Iterator<Item=&'s ITEM> + '_ {
-        self.data.iter().map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
+    pub fn iter<'s>(&'s self) -> impl Iterator<Item = &'s ITEM> + '_ {
+        self.data
+            .iter()
+            .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
     }
 
     ///returns the estimated memory usage in bytes of the chunk including overhead
@@ -197,13 +203,6 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
     pub fn export(&self) -> Vec<ITEM> {
         self.iter().cloned().collect::<Vec<_>>()
     }
-    pub fn compress(self) -> CompressedStorage<LIMIT, ITEM> {
-        let data = packed_lzw_compress(self.palette.len(), &self.data);
-        CompressedStorage {
-            palette: self.palette,
-            data,
-        }
-    }
 
     pub fn palette(&self) -> &[ITEM] {
         &self.palette
@@ -213,13 +212,62 @@ impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
         &self.data
     }
     pub fn export_compressed_data(&self) -> Vec<u8> {
-        todo!()
+        if self.data.bwidth() == 0 {
+            return Vec::new();
+        }
+
+        let compressed = lzw_compress_raw(self.palette.len(), self.data.iter());
+        let bytes = compressed
+            .par_iter()
+            .map(|x| x.to_be_bytes())
+            .flatten()
+            .collect::<Vec<_>>();
+        let tree = huffman_coding::HuffmanTree::from_data(&bytes);
+        let mut output = Vec::with_capacity(bytes.len() + 256);
+        output.extend_from_slice(&tree.to_table());
+        let mut writer = HuffmanWriter::new(&mut output, &tree);
+        writer
+            .write_all(&bytes)
+            .expect("writing data to the vec should not fail");
+        drop(writer);
+        output
+    }
+    pub fn import_from_compressed_data(palette: Vec<ITEM>, data: &[u8]) -> Self {
+        if palette.is_empty() {
+            panic!("palette must not be empty");
+        }
+        if data.is_empty() {
+            let data = vec![0_usize; LIMIT];
+            return Self {
+                palette,
+                data: PackedVec::new(data),
+            };
+        }
+
+        let tree = huffman_coding::HuffmanTree::from_table(&data[0..256]);
+        let data = &data[256..];
+        let mut reader = huffman_coding::HuffmanReader::new(data, tree);
+        let mut output = Vec::new();
+        reader
+            .read_to_end(&mut output)
+            .expect("reading from the vec should not fail");
+        drop(reader);
+        let data = output
+            .chunks_exact(4)
+            .map(|x| usize::from_be_bytes(x.try_into().unwrap()))
+            .collect::<Vec<_>>();
+        let decompressed = lzw_decompress(palette.len(), data.into_iter());
+        assert_eq!(
+            decompressed.len(),
+            LIMIT,
+            "data must have the same length as the limit"
+        );
+        Self {
+            palette,
+            data: PackedVec::new(decompressed),
+        }
     }
 }
-
-
-pub type CompressedStorage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync>
-= DStorage<SIZE, ITEM, StorageCompressed>;
 
 #[cfg(test)]
 mod test {
@@ -235,18 +283,21 @@ mod test {
         const materials: usize = 128;
         const size: usize = 32;
         let mut numbers = vec![0; size * size * size];
-        numbers.par_iter_mut()
+        numbers
+            .par_iter_mut()
             .take(size * size * 4 - 1)
             .for_each(|x| {
                 *x = 13;
             });
-        numbers.par_iter_mut()
+        numbers
+            .par_iter_mut()
             .skip(size * size * 4)
             .take(size * size * 5 - 1)
             .for_each(|x| {
                 *x = 7;
             });
-        numbers.par_iter_mut()
+        numbers
+            .par_iter_mut()
             .skip(size * size * 5)
             .take(size * size * 2 - 1)
             .for_each(|x| {
@@ -256,9 +307,19 @@ mod test {
             });
 
         let numbers = PackedVec::new(numbers);
-        println!("original: {} * {} = {}", numbers.len(), numbers.bwidth(), humanize_memory((numbers.len() * numbers.bwidth()) / 8));
+        println!(
+            "original: {} * {} = {}",
+            numbers.len(),
+            numbers.bwidth(),
+            humanize_memory((numbers.len() * numbers.bwidth()) / 8)
+        );
         let compressed = packed_lzw_compress(materials, &numbers);
-        println!("compressed: {} * {} = {}", compressed.len(), compressed.bwidth(), humanize_memory((compressed.len() * compressed.bwidth()) / 8));
+        println!(
+            "compressed: {} * {} = {}",
+            compressed.len(),
+            compressed.bwidth(),
+            humanize_memory((compressed.len() * compressed.bwidth()) / 8)
+        );
         let data = bincode::serialize(&compressed).unwrap();
         println!("data: {}", humanize_memory(data.len()));
         println!("  {}", hex::encode(&data));

@@ -1,9 +1,7 @@
 mod dev_flat;
 
 use bevy::app::App;
-use bevy::prelude::{Plugin};
-
-
+use bevy::prelude::Plugin;
 
 pub struct CoreGeneratorsPlugin;
 

@@ -1,4 +1,5 @@
 use std::f32::consts::PI as PI_32;
+use std::ops::{Deref, DerefMut};
 
 use bevy::app::App;
 use bevy::input::mouse::MouseMotion;
@@ -62,7 +63,7 @@ fn jump_rotation_test_cam_system(
 }
 
 fn is_overrated(rotation: &Quat) -> bool {
-    return ((*rotation) * Vec3::Y).y < 0.0;
+    ((*rotation) * Vec3::Y).y < 0.0
 }
 
 fn get_updown_angle(rotation: &Quat) -> f32 {
@@ -99,14 +100,35 @@ fn test_camera_move_mouse_system(
     }
 }
 
+struct Speed(f32);
+impl Default for Speed {
+    fn default() -> Self {
+        Speed(30.0)
+    }
+}
+impl Deref for Speed {
+    type Target = f32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for Speed {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 fn test_camera_move_keys_system(
     keys: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut Transform, With<Camera>>,
     delta_time: Res<Time>,
+    mut speed: Local<Speed>,
 ) {
     let mut forward_back = 0.0f32;
     let mut left_right = 0.0f32;
     let mut up_down = 0.0f32;
+    let mut speed_multiplier = *speed.deref().deref();
     if keys.pressed(KeyCode::ShiftLeft) {
         up_down -= 1.0;
     }
@@ -125,6 +147,20 @@ fn test_camera_move_keys_system(
     if keys.pressed(KeyCode::KeyD) {
         left_right += 1.0;
     }
+    if keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight) {
+        speed_multiplier *= 2.0;
+    }
+
+    let speed = speed.deref_mut().deref_mut();
+    if keys.just_pressed(KeyCode::ArrowUp) {
+        *speed += 1.0;
+        info!("speed: {}", *speed);
+    }
+    if keys.just_pressed(KeyCode::ArrowDown) {
+        *speed -= 1.0;
+        info!("speed: {}", *speed);
+    }
+
     if forward_back == 0.0 && left_right == 0.0 && up_down == 0.0 {
         return;
     }
@@ -132,7 +168,7 @@ fn test_camera_move_keys_system(
     query.iter_mut().for_each(|mut transform| {
         //camera diection on the xz plane
         let camera_direction = transform.local_z();
-        let move_speed = 4.0 * delta_time.delta_seconds();
+        let move_speed = speed_multiplier * delta_time.delta_seconds();
         let foward_vector =
             Vec3::new(camera_direction.x, 0.0, camera_direction.z).normalize() * move_speed;
         let right_vector =

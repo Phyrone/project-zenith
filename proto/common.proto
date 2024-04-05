@@ -36,20 +36,31 @@ message Rotation{
 }
 
 message MessageComponent{
+  optional MessageFormating format = 0x01;
+
   oneof content{
-    string text = 0x11;
-    MessageComponentFormat format = 0x12;
+    string text = 0x10;
+    ResourceKey localized = 0x12;
+    ResourceKey item = 0x21;
   }
+
+  //append components after this (inherit)
+  repeated MessageComponent childs = 0xC1;
 }
-message MessageComponentFormat{
-  MessageComponent content = 0x01;
-  reserved 2; //Color
-  reserved 3; //Bold
-  reserved 4; //Italic
-  reserved 5; //Underlined
-  reserved 6; //Strikethrough
-  reserved 7; //Obfuscated
+message MessageComponentArray{
+  repeated MessageComponent childs = 0x01;
 }
+message MessageFormating{
+  reserved 1; //Color
+  reserved 2; //Bold
+  reserved 3; //Italic
+  reserved 4; //Underlined
+  reserved 5; //Strikethrough
+  reserved 6; //Obfuscated
+
+  reserved 0x0F; //font
+}
+
 
 //resource keys can be used to reference resources like blocks, items, entities, etc.
 message ResourceKey{
@@ -66,6 +77,7 @@ message ResourceIdentifier{
   //null = core game
   optional  string namespace = 0x01;
   string id = 0x02;
+  //maybe for common variants e.g. wood type
   optional  uint32 variant = 0x03;
 }
 

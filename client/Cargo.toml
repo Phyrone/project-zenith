@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.13.0",features = ["async-io","multi-threaded"] }
+bevy = { version = "0.13.0", features = ["async-io", "multi-threaded", "webp"] }
 clap = { version = "4.4.12", features = ["cargo", "derive", "env", "string", "unicode"] }
 error-stack = "0.4.1"
 fast_log = { version = "1.6.10", features = ["zip"] }
@@ -35,6 +35,15 @@ unique-type-id = "1.3.0"
 bincode = "1.3.3"
 futures-lite = "2.2.0"
 futures-polling = "0.1.1"
+wry = { version = "0.37.0", features = ["devtools", "transparent"] }
+http = "0.2.12"
+image = { version = "0.24.9", features = ["avif", "rayon", "avif-decoder"] }
+tempfile = "3.10.1"
+bevy_atmosphere = "0.9.0"
+discord-rpc-client = "0.4.0"
+itertools = "0.12.1"
+hashbrown = "0.14.3"
+rkyv = "0.7.44"
 
 [profile.dev]
 opt-level = 1
@@ -46,19 +55,6 @@ opt-level = 3
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["tokio", "html_reports"] }
-
-[profile.dev.package."*"]
-opt-level = 3
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-
-[profile.bench]
-opt-level = 3
-lto = true
-codegen-units = 1
 
 [[bench]]
 name = "criterion"

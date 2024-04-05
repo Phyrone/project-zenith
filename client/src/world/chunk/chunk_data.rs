@@ -1,4 +1,5 @@
 use std::hash::{Hash, Hasher};
+use std::ops::{Deref, DerefMut};
 
 use bevy::prelude::*;
 use bevy::utils::AHasher;
@@ -8,9 +9,10 @@ use unstructured::Document;
 
 use game2::storage::Storage;
 use game2::CHUNK_VOLUME;
+use game2::mono_bundle::MonoBundle;
 
 use crate::world::chunk::grid::ChunkGrid;
-use crate::world::chunk::{ChunkRenderStage, RenderingWorldFixedChunk};
+use crate::world::chunk::{ChunkRenderStage, VoxelWorldFixedChunkPosition};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Default)]
 pub struct ChunkDataPlugin;
@@ -26,8 +28,8 @@ impl Plugin for ChunkDataPlugin {
 
 /* Systems */
 fn update_neighbor_checksums(
-    changes: Query<(&RenderingWorldFixedChunk, &ClientChunkData), Changed<ClientChunkData>>,
-    _all_chunks: Query<&ClientChunkData, With<RenderingWorldFixedChunk>>,
+    changes: Query<(&VoxelWorldFixedChunkPosition, &ClientChunkData), Changed<ClientChunkData>>,
+    _all_chunks: Query<&ClientChunkData, With<VoxelWorldFixedChunkPosition>>,
     mut neighbors: Query<&mut ChunkNeighborDataValues>,
     grid: Res<ChunkGrid>,
 ) {
@@ -45,7 +47,7 @@ fn update_neighbor_checksums(
             if let Ok(mut neighbor_data) = neighbors.get_mut(*neighbor) {
                 //let neighbor_neighbour_data = all_chunks.get(*neighbor).unwrap();
                 //TODO only update if relevant data changed
-                neighbor_data.update(Some(data.storage()));
+                //neighbor_data.update(Some(data.storage()));
             }
         }
     }
@@ -58,12 +60,25 @@ pub type ChunkDataStorage = Storage<CHUNK_VOLUME, ChunkDataEntry>;
 pub struct ClientChunkData(Arc<ChunkDataStorage>);
 
 impl ClientChunkData {
-    pub fn edit(&mut self) -> &mut ChunkDataStorage {
-        Arc::make_mut(&mut self.0)
+    pub fn new(data: ChunkDataStorage) -> Self {
+        Self(Arc::new(data))
     }
+    pub fn empty() -> Self {
+        Self(Arc::new(ChunkDataStorage::empty()))
+    }
+}
 
-    pub fn storage(&self) -> &ChunkDataStorage {
+impl Deref for ClientChunkData {
+    type Target = ChunkDataStorage;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for ClientChunkData {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        Arc::make_mut(&mut self.0)
     }
 }
 
@@ -83,7 +98,7 @@ pub enum ChunkDataEntry {
     #[default]
     Empty,
     //the referenced material + additional data
-    Block(Entity, Option<Box<Document>>),
+    Block(usize, Option<Arc<Document>>),
 }
 
 impl ChunkDataEntry {
@@ -94,26 +109,44 @@ impl ChunkDataEntry {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Component)]
 pub struct ChunkNeighborDataValues {
-    neighbor_summary: u64,
+    neighbours_check: u64,
+}
+
+impl Default for ChunkNeighborDataValues {
+    fn default() -> Self {
+        let mut hasher = AHasher::default();
+        [Option::<&ChunkDataStorage>::None; 6].hash(&mut hasher);
+        Self {
+            neighbours_check: hasher.finish(),
+        }
+    }
 }
 
 impl ChunkNeighborDataValues {
-    pub fn new() -> Self {
+    pub fn new(neighbors: [Option<&ChunkDataStorage>; 6]) -> Self {
+        let mut hasher = AHasher::default();
+        neighbors.hash(&mut hasher);
         Self {
-            neighbor_summary: 0,
+            neighbours_check: hasher.finish(),
         }
     }
 
-    pub fn update(&mut self, storage: Option<&ChunkDataStorage>) {
+    pub fn update(&mut self, neighbors: [Option<&ChunkDataStorage>; 6]) -> bool {
         let mut hasher = AHasher::default();
-        hasher.write_u64(self.neighbor_summary);
-        storage.hash(&mut hasher);
-        self.neighbor_summary = hasher.finish();
+        neighbors.hash(&mut hasher);
+        let new_check = hasher.finish();
+        if new_check != self.neighbours_check {
+            self.neighbours_check = new_check;
+            true
+        } else {
+            false
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::hash::Hash;
     use std::mem::size_of;
 
     use game2::humanize::humanize_memory;
@@ -128,7 +161,7 @@ mod test {
 
     #[test]
     fn test_chunk_data_entry() {
-        let neighbors = ChunkNeighborDataValues::new();
+        let neighbors = ChunkNeighborDataValues::default();
         println!("{:?}", neighbors);
     }
 }

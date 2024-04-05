@@ -1,5 +1,1 @@
-
-pub fn a(){
-    
-    
-}
+pub fn a() {}

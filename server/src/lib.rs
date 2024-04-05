@@ -11,6 +11,7 @@ mod world;
 
 #[cfg(test)]
 mod tests;
+mod savegame;
 
 async fn a() {
     let endpoint =

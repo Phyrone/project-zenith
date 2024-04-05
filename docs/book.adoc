@@ -1,0 +1,13 @@
+:app-name: Game2
+:doctype: book
+:authors: Phyrone
+:toc:
+:toc-title: Overview
+:toclevels: 3
+
+= Game2
+
+:leveloffset: 1
+include::client/client.adoc[]
+
+:leveloffset: -1

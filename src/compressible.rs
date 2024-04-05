@@ -1,12 +1,10 @@
 //T = type of compressed data
 //A = type of compression algorithm
 
-
-
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Eq, PartialEq, Component)]
-pub struct Compressed<T: serde::Serialize, A> {
+pub struct Compressed<T, A> {
     data: Vec<u8>,
     len: usize,
     _type: std::marker::PhantomData<T>,
@@ -14,8 +12,8 @@ pub struct Compressed<T: serde::Serialize, A> {
 }
 
 impl<T, A> Compressed<T, A>
-    where
-        T: serde::Serialize,
+where
+    T: serde::Serialize,
 {
     pub fn len_data(&self) -> usize {
         self.len
@@ -41,8 +39,8 @@ pub struct LZMA;
 
 //TODO add error return types
 pub trait Compressible<T>
-    where
-        T: serde::Serialize + serde::de::DeserializeOwned,
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
     fn compress_lz4(&self) -> Compressed<T, LZ4>;
 
@@ -69,9 +67,11 @@ pub trait Compressible<T>
     }
 }
 
+
+
 impl<T> Compressible<T> for T
-    where
-        T: serde::Serialize + serde::de::DeserializeOwned,
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
     fn compress_lz4(&self) -> Compressed<T, LZ4> {
         let bytes = bincode::serialize(self).expect("failed to serialize data");
@@ -137,8 +137,8 @@ impl<T> Compressible<T> for T
 }
 
 impl<T> Compressed<T, LZ4>
-    where
-        T: serde::de::DeserializeOwned + serde::Serialize,
+where
+    T: serde::de::DeserializeOwned + serde::Serialize,
 {
     pub fn decompress(&self) -> T {
         let bytes = lz4_flex::decompress(&self.data, self.len).unwrap();
@@ -147,8 +147,8 @@ impl<T> Compressed<T, LZ4>
 }
 
 impl<T> Compressed<T, ZSTD>
-    where
-        T: serde::Serialize + serde::de::DeserializeOwned,
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
     pub fn decompress(&self) -> T {
         let bytes = zstd::bulk::decompress(&self.data, self.len).unwrap();
@@ -157,8 +157,8 @@ impl<T> Compressed<T, ZSTD>
 }
 
 impl<T> Compressed<T, LZMA>
-    where
-        T: serde::Serialize + serde::de::DeserializeOwned,
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
     pub fn decompress(&self) -> T {
         let bytes = lzma::decompress(&self.data).unwrap();
@@ -167,8 +167,8 @@ impl<T> Compressed<T, LZMA>
 }
 
 impl<T> Compressed<T, SNAPPY>
-    where
-        T: serde::Serialize + serde::de::DeserializeOwned,
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
     pub fn decompress(&self) -> T {
         let decompressed = snap::raw::Decoder::new()
@@ -241,5 +241,4 @@ mod tests {
         let decompressed = compressed.decompress();
         assert_eq!(test_struct, decompressed);
     }
-
 }

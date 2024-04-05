@@ -1,12 +1,10 @@
-
 use std::hash::Hash;
 use std::time::Duration;
 
 use bevy::app::{App, PluginGroupBuilder, ScheduleRunnerPlugin};
 use bevy::ecs::schedule::ScheduleLabel;
 use bevy::prelude::{
-    Component, FrameCountPlugin, Plugin, PluginGroup, TaskPoolPlugin,
-    TypeRegistrationPlugin,
+    Component, FrameCountPlugin, Plugin, PluginGroup, TaskPoolPlugin, TypeRegistrationPlugin,
 };
 use bevy::time::TimePlugin;
 use serde::{Deserialize, Serialize};

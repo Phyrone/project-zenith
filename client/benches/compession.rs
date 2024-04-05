@@ -1,4 +1,1 @@
-
-fn common(criterion: &mut Criterion) {
-    
-}
+fn common(criterion: &mut Criterion) {}

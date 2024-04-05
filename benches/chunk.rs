@@ -1,10 +1,10 @@
 use std::ops::Deref;
 
 use bevy::utils::petgraph::visit::Walker;
-use criterion::{Bencher, black_box, Criterion, criterion_group, criterion_main};
+use criterion::{black_box, criterion_group, criterion_main, Bencher, Criterion};
 
-use game2::CHUNK_VOLUME;
 use game2::storage::Storage;
+use game2::CHUNK_VOLUME;
 
 criterion_group!(benches, chunk);
 
