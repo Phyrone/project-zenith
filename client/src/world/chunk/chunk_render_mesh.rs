@@ -9,35 +9,31 @@ use futures_lite::future;
 use rayon::prelude::*;
 
 use game2::{CHUNK_SIZE, WithFixedSizeExt};
+
 use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::chunk::chunk_data::ClientChunkData;
 use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::voxel3::{
     create_voxel_chunk, GroupedVoxelMeshes, voxels_grouped_greedy_mesh,
 };
-use crate::world::material::MaterialRegistry;
-
 
 //TODO cancel tasks when chunk is removed
 //TODO cancel tasks when chunk is updated before the task is finished
 //TODO lod support
 #[derive(Default)]
-pub struct ChunkRenderPlugin;
+pub struct ChunkRenderMeshPlugin;
 
-impl Plugin for ChunkRenderPlugin {
+impl Plugin for ChunkRenderMeshPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (
-                create_build_mesh_tasks,
-                position_chunks,
-                apply_calculated_meshes_system,
-            )
-                .in_set(ChunkRenderStage::BuildVoxels),
+            (create_build_mesh_tasks, apply_calculated_meshes_system).chain()
+                .in_set(ChunkRenderStage::ConstructMesh)
+                .after(ChunkRenderStage::ChunkPreData),
         );
+        app.add_systems(Update, (position_chunks));
     }
 }
-
 #[derive(Debug, Default, Component)]
 #[component(storage = "SparseSet")]
 pub struct ChunkRenderErrand;
@@ -45,6 +41,18 @@ pub struct ChunkRenderErrand;
 #[derive(Debug, Default, Component, Clone)]
 pub struct VoxelChunkSurface {
     pub iden: TextureIden,
+}
+impl VoxelChunkSurface{
+    
+    
+}
+
+impl Deref for VoxelChunkSurface {
+    type Target = TextureIden;
+
+    fn deref(&self) -> &Self::Target {
+        &self.iden
+    }
 }
 
 //similar to PbrBundle but without material but an identifier to gain the material later
@@ -70,7 +78,6 @@ fn create_build_mesh_tasks(
         (Entity, &ClientChunkData, &VoxelWorldFixedChunkPosition),
         (With<ChunkRenderErrand>),
     >,
-    materials: Res<MaterialRegistry>,
 ) {
     let pool = AsyncComputeTaskPool::get();
     chunks.par_iter().for_each(|(entity, data, pos)| {
@@ -84,17 +91,13 @@ fn create_build_mesh_tasks(
             .map(|chunk| chunk.map(|(_, data, _)| data.deref()))
             .collect::<Vec<_>>()
             .into_fixed_size::<6>();
-
-        //TODO change resolution depending on LOD
-        let resolution = 1;
-
-        let voxels = create_voxel_chunk(data.deref(), &neighbors, &materials, resolution);
-
+        
         let greedy_mesh_task = pool.spawn(async move {
+            let voxels = create_voxel_chunk(data.deref(), &neighbors, 1);
             //TODO meshes might be needed in main world later for physics
             //voxels_grouped_mesh(&voxels, resolution, RenderAssetUsages::RENDER_WORLD)
             //TODO replace with greedy meshing (once i made tiling textures work + shader for it)
-            voxels_grouped_greedy_mesh(&voxels, resolution, RenderAssetUsages::RENDER_WORLD)
+            voxels_grouped_greedy_mesh(&voxels, 1, RenderAssetUsages::RENDER_WORLD)
         });
 
         let greedy_mesh_task = GreedyMeshTask::new(greedy_mesh_task);
@@ -190,6 +193,7 @@ fn apply_calculated_meshes_system(
         }
     })
 }
+
 
 #[derive(Debug, Component)]
 struct GreedyMeshTask {

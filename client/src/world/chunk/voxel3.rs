@@ -6,23 +6,23 @@ use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::Face;
 use bevy::utils::petgraph::visit::Walker;
+use block_mesh::{
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
+    UnorientedQuad, VoxelVisibility,
+};
 use block_mesh::ndshape::RuntimeShape;
 use block_mesh::VoxelVisibility::Translucent;
-use block_mesh::{
-    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, UnorientedQuad,
-    VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
-};
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rayon::prelude::*;
 
+use game2::{CHUNK_SIZE, Direction};
 use game2::bundle::Bundle;
 use game2::mono_bundle::MonoBundle;
-use game2::{Direction, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use crate::world::chunk::TextureIden;
-use crate::world::material::{MaterialRegistry};
+use crate::world::material::{MaterialDescription, MaterialRegistry};
 
 const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
@@ -30,23 +30,21 @@ pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
 
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Voxel {
-    id: u32,
+    material_description: MaterialDescription,
 }
 impl Voxel {
     pub fn empty() -> Self {
-        Self { id: 0 }
-    }
-
-    pub fn of(id: u32, translucent: bool) -> Self {
-        let mut id = id;
-        if translucent {
-            id |= 1 << 31;
+        Self {
+            material_description: MaterialDescription::AIR,
         }
-
-        Self { id }
     }
+    pub fn new(material_description: MaterialDescription) -> Self {
+        Self { material_description }
+    }
+    
+    
     fn translucent(&self) -> bool {
-        return (self.id & 1 << 31) != 0;
+        self.material_description.is_translucent()
     }
 
     pub fn id(&self) -> u32 {
@@ -80,26 +78,10 @@ impl ChunkDataEntry {
         //TODO resolution and index could be used for more complex entries
         _resolution: usize,
         _index: usize,
-        materials: &MaterialRegistry,
     ) -> Voxel {
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
-            ChunkDataEntry::Block(material, _) => {
-                let bundle = materials.get_bundle(*material);
-                match bundle {
-                    //TODO replace with not found material
-                    None => return Voxel::empty(),
-                    Some(bundle) => {
-                        let btt = bundle
-                            .get::<BlockTextureDiversity>()
-                            .map(|btt| *btt)
-                            .unwrap_or_default();
-
-                        //TODO check is the material is translucent
-                        Voxel::of(*material as u32, false)
-                    }
-                }
-            }
+            ChunkDataEntry::Block(material, _) => Voxel::of(*material as u32, false),
         }
     }
 }
@@ -107,7 +89,6 @@ impl ChunkDataEntry {
 pub fn create_voxel_chunk<'storage>(
     data: &'storage ChunkDataStorage,
     neighbors: &[Option<&ChunkDataStorage>; 6],
-    materials: &MaterialRegistry,
     resolution: usize,
 ) -> Vec<Voxel> {
     let voxel_chunk_size = resolution * CHUNK_SIZE + 2; //+2 for the faces
@@ -130,27 +111,9 @@ pub fn create_voxel_chunk<'storage>(
         //skip edges
         match mode {
             //inner
-            0 => get_voxel_inner(
-                x,
-                y,
-                z,
-                resolution,
-                voxel_chunk_size,
-                data,
-                materials,
-                voxel,
-            ),
+            0 => get_voxel_inner(x, y, z, resolution, voxel_chunk_size, data, voxel),
             //face
-            1 => get_voxel_face(
-                x,
-                y,
-                z,
-                resolution,
-                voxel_chunk_size,
-                neighbors,
-                materials,
-                voxel,
-            ),
+            1 => get_voxel_face(x, y, z, resolution, voxel_chunk_size, neighbors, voxel),
             //skip corners
             _ => return,
         }
@@ -167,7 +130,6 @@ fn get_voxel_inner(
     resolution: usize,
     voxel_chunk_size: usize,
     chunk: &ChunkDataStorage,
-    materials: &MaterialRegistry,
     into: &mut Voxel,
 ) {
     let inner_index = (x - 1)
@@ -181,7 +143,7 @@ fn get_voxel_inner(
         inner_z % resolution,
     );
     let sub_index = sub_x + sub_y * resolution + sub_z * resolution * resolution;
-    *into = inner_entry.create_voxel(resolution, sub_index, materials);
+    *into = inner_entry.create_voxel(resolution, sub_index);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -192,7 +154,6 @@ fn get_voxel_face(
     resolution: usize,
     voxel_chunk_size: usize,
     neighbours: &[Option<&ChunkDataStorage>; 6],
-    materials: &MaterialRegistry,
     into: &mut Voxel,
 ) {
     //0 = east
@@ -243,7 +204,7 @@ fn get_voxel_face(
     };
     let target_i = target_x + target_y * CHUNK_SIZE + target_z * CHUNK_SIZE * CHUNK_SIZE;
     let neighbor_target_entry = neighbour.get(target_i);
-    *into = neighbor_target_entry.create_voxel(resolution, 0, materials);
+    *into = neighbor_target_entry.create_voxel(resolution, 0);
 }
 
 pub fn voxels_geedy_quads(voxels: &[Voxel], resolution: usize) -> GreedyQuadsBuffer {
@@ -349,9 +310,10 @@ pub fn construct_grouped_mesh(
                 let pos = quad.minimum;
                 let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
                 let voxel = &voxel_chunk[pos as usize];
-                (TextureIden::new(voxel.id(), direction), quad,face.clone())
+                (TextureIden::new(voxel.id(), direction), quad, face.clone())
             })
-        }).flatten()
+        })
+        .flatten()
         .collect::<Vec<_>>();
 
     //create meshes grouped by material

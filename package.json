@@ -1,0 +1,6 @@
+{
+  "name": "game2",
+  "workspaces": [
+    "docs"
+  ]
+}

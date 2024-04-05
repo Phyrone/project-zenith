@@ -18,15 +18,12 @@ use game2::CHUNK_SIZE;
 use crate::discord::DiscordRPCPlugin;
 use crate::startup::{ClientStartupError, init_logger, StartupParams};
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage, ClientChunkData};
-use crate::world::chunk::chunk_render::ChunkRenderErrand;
+use crate::world::chunk::chunk_render_mesh::ChunkRenderErrand;
 use crate::world::chunk::VoxelWorldFixedChunkPosition;
 use crate::world::ClientWorldPlugin;
-use crate::world::ClientWorldPlugin;
-use crate::world::material::{BlockMaterialDescription, MaterialRegistry};
-
+use crate::world::material::{MaterialRegistry};
 use bevy::DefaultPlugins;
-use crate::world::material::{BlockMaterialDescription, MaterialRegistry};
-use crate::world::ClientWorldPlugin;
+use bevy::render::render_resource::ShaderRef::Handle;
 
 pub mod discord;
 mod startup;
@@ -173,7 +170,6 @@ fn test_textures(
     let grass_texture = materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::hex("7b824e").unwrap(),
-
             base_color_texture: Some(assets.load("textures/prototype/green/texture_01.png")),
             //base_color_texture: Some(assets.load("materials/grass/Color.png")),
             //occlusion_texture: Some(assets.load("materials/grass/AmbientOcclusion.png")),

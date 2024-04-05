@@ -6,10 +6,11 @@ use bevy::prelude::{App, Component, Plugin, SystemSet};
 use game2::Direction;
 
 pub mod chunk_data;
-pub mod chunk_render;
+pub mod chunk_render_mesh;
 pub mod grid;
 //pub mod voxel2;
 pub mod voxel3;
+mod chunk_apply_standart_materials;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldChunksPlugin;
@@ -17,7 +18,7 @@ pub struct ClientWorldChunksPlugin;
 impl Plugin for ClientWorldChunksPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((grid::ChunkGridPlugin, chunk_data::ChunkDataPlugin));
-        app.add_plugins(chunk_render::ChunkRenderPlugin);
+        app.add_plugins(chunk_render_mesh::ChunkRenderMeshPlugin);
     }
 }
 
@@ -41,14 +42,11 @@ pub enum ChunkRenderStage {
     // Determine block states, position chunks etc.
     ChunkPreData,
 
-    // Empty voxel chunks are inserted depeding on lod
-    PreBuildVoxels,
-
     // Voxels are built from the block states
-    BuildVoxels,
+    ConstructMesh,
 
-    // out of the voxels, meshes, textures etc. are built which then can be sent to the GPU
-    ApplyVoxels,
+    //the constructed voxels are now used to build the mesh
+    ApplyMaterials,
 }
 
 #[repr(u8)]

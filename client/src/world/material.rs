@@ -3,8 +3,11 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use bevy::app::App;
+use bevy::asset::AssetContainer;
 use bevy::prelude::{Plugin, Resource};
+use itertools::Itertools;
 use slab::Slab;
+use unstructured::{Document, Unstructured};
 
 use game2::mono_bundle::MonoBundle;
 
@@ -13,64 +16,88 @@ pub struct MaterialsPlugin;
 
 impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<MaterialRegistry>();
     }
 }
 
-#[derive(Resource, Clone)]
-pub struct MaterialRegistry {
-    //bah!... but i didnt found a better solution yet
-    materials: rclite::Arc<Slab<Arc<MonoBundle>>>,
+
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    Hash,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    serde::Serialize,
+    serde::Deserialize,
+)]
+pub struct MaterialDescription {
+    pub id: usize,
+    pub data: Option<Arc<Document>>,
 }
 
-impl Default for MaterialRegistry {
-    fn default() -> Self {
-        Self {
-            materials: rclite::Arc::new(Slab::new()),
-        }
-    }
-}
+impl MaterialDescription {
+    pub const TRANSLUCENT_KEY: &'static str = "mesh/translucent";
+    const AIR_MATERIAL_ID: usize = 0;
+    pub const AIR: MaterialDescription = MaterialDescription {
+        id: Self::AIR_MATERIAL_ID,
+        data: None,
+    };
 
-impl MaterialRegistry {
-    const AIR_DATA: usize = 0;
-
-    fn edit_materials(&mut self) -> &mut Slab<Arc<MonoBundle>> {
-        rclite::Arc::make_mut(&mut self.materials)
-    }
-    pub fn insert(&mut self, material: MonoBundle) -> usize {
-        let materials = self.edit_materials();
-        materials.insert(Arc::new(material))
-    }
-    pub fn create(&mut self) -> (usize, Arc<MonoBundle>) {
-        let bundle = Arc::new(MonoBundle::new());
-        let material_id = self.edit_materials().insert(bundle.clone());
-        (material_id, bundle)
+    pub fn new(id: usize) -> Self {
+        Self { id, data: None }
     }
 
-    pub fn get_bundle(&self, id: usize) -> Option<Arc<MonoBundle>> {
-        self.materials.get(id).map(|bundle| bundle.clone())
+    pub fn is_translucent(&self) -> bool {
+        self.data
+            .as_ref()
+            .map(|data| data.select(Self::TRANSLUCENT_KEY).ok())
+            .flatten()
+            .map(|transparent| {
+                if let &Unstructured::Bool(transparent) = transparent {
+                    transparent
+                } else {
+                    false
+                }
+            })
+            .unwrap_or(false)
     }
 
-    pub fn get<T>(&self, id: usize) -> Option<&T>
-    where
-        T: Any + Send + Sync,
-    {
-        self.materials.get(id).and_then(|bundle| bundle.get::<T>())
-    }
-
-    pub fn remove(&mut self, id: usize) -> Option<Arc<MonoBundle>> {
-        let materials = self.edit_materials();
-        if materials.contains(id) {
-            Some(materials.remove(id))
+    pub fn edit_document(&mut self) -> &mut Document {
+        if let Some(data) = &mut self.data {
+            Arc::make_mut(data)
         } else {
-            None
+            self.data = Some(Arc::new(Document::default()));
+            Arc::make_mut(self.data.as_mut().unwrap())
         }
     }
+    
+    pub fn set_translucent(&mut self, translucent: bool) {
+        let document = self.edit_document();
+        let transparent_section = document.select_mut(Self::TRANSLUCENT_KEY)
+            .expect("Could not select transparent section");
+        *transparent_section = Unstructured::Bool(translucent);
+    }
 
-    pub fn clear(&mut self) {
-        self.materials.clear();
+    pub fn merged_clone(&self, document: Option<Document>) -> Self {
+        if let Some(document) = document {
+            let mut data = self.data.clone();
+            if let Some(mut data) = &mut data {
+                let mut document_edit = Arc::make_mut(&mut data);
+                document_edit.merge(document);
+            } else {
+                data = Some(Arc::new(document));
+            }
+            Self { id: self.id, data }
+        } else {
+            Self {
+                id: self.id,
+                data: self.data.clone(),
+            }
+        }
     }
 }
 
-
-
+#[cfg(test)]
+pub mod test {}

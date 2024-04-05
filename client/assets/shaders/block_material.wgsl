@@ -21,11 +21,11 @@ struct BlockMaterial{
 
 @fragment
 fn fragment(
-    in: VertexOutput,
+    mesh: VertexOutput,
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
     // generate a PbrInput struct from the StandardMaterial bindings
-    var pbr_input = pbr_input_from_standard_material(in, is_front);
+    var pbr_input: PbrInput= pbr_input_from_standard_material(mesh, is_front);
 
     //make texture tiling
     //pbr_input.uv *= 2.0;
