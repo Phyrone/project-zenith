@@ -45,12 +45,6 @@ itertools = "0.12.1"
 hashbrown = "0.14.3"
 rkyv = "0.7.44"
 
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package.bevy_rapier3d]
-opt-level = 3
-
 
 
 [dev-dependencies]

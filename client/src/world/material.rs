@@ -15,10 +15,8 @@ use game2::mono_bundle::MonoBundle;
 pub struct MaterialsPlugin;
 
 impl Plugin for MaterialsPlugin {
-    fn build(&self, app: &mut App) {
-    }
+    fn build(&self, app: &mut App) {}
 }
-
 
 #[derive(
     Debug,
@@ -72,10 +70,11 @@ impl MaterialDescription {
             Arc::make_mut(self.data.as_mut().unwrap())
         }
     }
-    
+
     pub fn set_translucent(&mut self, translucent: bool) {
         let document = self.edit_document();
-        let transparent_section = document.select_mut(Self::TRANSLUCENT_KEY)
+        let transparent_section = document
+            .select_mut(Self::TRANSLUCENT_KEY)
             .expect("Could not select transparent section");
         *transparent_section = Unstructured::Bool(translucent);
     }

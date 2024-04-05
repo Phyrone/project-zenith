@@ -9,8 +9,8 @@ pub mod chunk_data;
 pub mod chunk_render_mesh;
 pub mod grid;
 //pub mod voxel2;
-pub mod voxel3;
 mod chunk_apply_standart_materials;
+pub mod voxel3;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldChunksPlugin;

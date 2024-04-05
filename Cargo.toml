@@ -54,7 +54,6 @@ resolver = "2"
 members = [
     "client",
     "server",
-    "libs/prost_stream",
 ]
 
 [profile.release]

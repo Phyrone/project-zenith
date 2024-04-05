@@ -32,6 +32,7 @@ pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
 pub struct Voxel {
     material_description: MaterialDescription,
 }
+
 impl Voxel {
     pub fn empty() -> Self {
         Self {
@@ -39,10 +40,11 @@ impl Voxel {
         }
     }
     pub fn new(material_description: MaterialDescription) -> Self {
-        Self { material_description }
+        Self {
+            material_description,
+        }
     }
-    
-    
+
     fn translucent(&self) -> bool {
         self.material_description.is_translucent()
     }
@@ -81,7 +83,8 @@ impl ChunkDataEntry {
     ) -> Voxel {
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
-            ChunkDataEntry::Block(material, _) => Voxel::of(*material as u32, false),
+            ChunkDataEntry::Block(material, data) =>
+                Voxel::new(material.merged_clone(data.clone())),
         }
     }
 }
@@ -229,6 +232,7 @@ pub fn voxels_geedy_quads(voxels: &[Voxel], resolution: usize) -> GreedyQuadsBuf
     );
     buffer
 }
+
 pub fn voxels_quads(voxels: &[Voxel], resolution: usize) -> UnitQuadBuffer {
     let size = resolution * CHUNK_SIZE + 2;
     assert_eq!(

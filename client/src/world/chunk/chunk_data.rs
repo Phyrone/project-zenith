@@ -7,14 +7,12 @@ use rayon::prelude::*;
 use rclite::Arc;
 use unstructured::Document;
 
-use game2::CHUNK_VOLUME;
 use game2::storage::Storage;
+use game2::CHUNK_VOLUME;
 
-use crate::world::chunk::{ChunkRenderStage, VoxelWorldFixedChunkPosition};
 use crate::world::chunk::grid::ChunkGrid;
-use crate::world::material::MaterialDescription;
-
 use crate::world::chunk::{ChunkRenderStage, VoxelWorldFixedChunkPosition};
+use crate::world::material::MaterialDescription;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Default)]
 pub struct ChunkDataPlugin;
@@ -100,7 +98,7 @@ pub enum ChunkDataEntry {
     #[default]
     Empty,
     //the referenced material + additional data
-    Block(MaterialDescription),
+    Block(MaterialDescription, Option<Document>),
 }
 
 impl ChunkDataEntry {

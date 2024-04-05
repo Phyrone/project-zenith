@@ -4,18 +4,18 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::tasks::{AsyncComputeTaskPool, block_on, Task};
+use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
 use futures_lite::future;
 use rayon::prelude::*;
 
-use game2::{CHUNK_SIZE, WithFixedSizeExt};
+use game2::{WithFixedSizeExt, CHUNK_SIZE};
 
-use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::chunk::chunk_data::ClientChunkData;
 use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::voxel3::{
-    create_voxel_chunk, GroupedVoxelMeshes, voxels_grouped_greedy_mesh,
+    create_voxel_chunk, voxels_grouped_greedy_mesh, GroupedVoxelMeshes,
 };
+use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 
 //TODO cancel tasks when chunk is removed
 //TODO cancel tasks when chunk is updated before the task is finished
@@ -27,7 +27,8 @@ impl Plugin for ChunkRenderMeshPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (create_build_mesh_tasks, apply_calculated_meshes_system).chain()
+            (create_build_mesh_tasks, apply_calculated_meshes_system)
+                .chain()
                 .in_set(ChunkRenderStage::ConstructMesh)
                 .after(ChunkRenderStage::ChunkPreData),
         );
@@ -42,10 +43,7 @@ pub struct ChunkRenderErrand;
 pub struct VoxelChunkSurface {
     pub iden: TextureIden,
 }
-impl VoxelChunkSurface{
-    
-    
-}
+impl VoxelChunkSurface {}
 
 impl Deref for VoxelChunkSurface {
     type Target = TextureIden;
@@ -91,7 +89,7 @@ fn create_build_mesh_tasks(
             .map(|chunk| chunk.map(|(_, data, _)| data.deref()))
             .collect::<Vec<_>>()
             .into_fixed_size::<6>();
-        
+
         let greedy_mesh_task = pool.spawn(async move {
             let voxels = create_voxel_chunk(data.deref(), &neighbors, 1);
             //TODO meshes might be needed in main world later for physics
@@ -193,7 +191,6 @@ fn apply_calculated_meshes_system(
         }
     })
 }
-
 
 #[derive(Debug, Component)]
 struct GreedyMeshTask {
