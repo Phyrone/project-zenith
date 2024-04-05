@@ -60,7 +60,7 @@ pub fn packed_lzw_compress(
     let old_size = data.bwidth() * data.len();
     let new_size = compressed.bwidth() * compressed.len();
     //when the compressed data is not smaller than the original data, we return the original data
-    if (new_size >= old_size || compressed.len() >= data.len()) {
+    if new_size >= old_size || compressed.len() >= data.len() {
         data.to_owned()
     } else {
         compressed
@@ -108,5 +108,5 @@ where
 
 #[cfg(test)]
 mod test {
-    use packedvec::PackedVec;
+    
 }

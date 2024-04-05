@@ -273,7 +273,7 @@ impl<T> WithFixedSizeExt<T> for Vec<T> {
 mod test_perspective_faced_index {
     use std::ops::Range;
 
-    use super::*;
+    
 
     const DIMENSION_SIZE: usize = 4;
     const DIMENSION_FACE_SURFACE: usize = DIMENSION_SIZE * DIMENSION_SIZE;

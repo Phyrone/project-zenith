@@ -1,5 +1,5 @@
 use bevy::app::{App, Startup};
-use bevy::prelude::{Commands, Component, Plugin};
+use bevy::prelude::{Commands, Plugin};
 
 #[derive(Debug, Default)]
 pub struct CoreMaterialPlugins;
@@ -10,6 +10,6 @@ impl Plugin for CoreMaterialPlugins {
     }
 }
 
-fn apply_default_materials(mut commands: Commands) {}
+fn apply_default_materials(_commands: Commands) {}
 
 pub struct MaterialRegistry {}

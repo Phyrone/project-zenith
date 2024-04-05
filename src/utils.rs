@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use bevy::utils::petgraph::visit::Walker;
+
 use huffman_coding::{HuffmanReader, HuffmanTree, HuffmanWriter};
 
 pub fn to_huffman(fields: &[usize]) -> Vec<u8> {
@@ -30,7 +30,7 @@ fn from_huffman(data: &[u8]) -> Vec<usize> {
     reader
         .read_to_end(&mut output)
         .expect("reading from the vec should not fail");
-    if (output.len() % std::mem::size_of::<usize>() != 0) {
+    if output.len() % std::mem::size_of::<usize>() != 0 {
         panic!("the length of the output should be a multiple of the size of usize");
     }
     unsafe { unsafe_vec_transform::<u8, usize>(output) }
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_huffman() {
-        let mut fields = vec![0; (32 * 32 * 32) * 64];
+        let fields = vec![0; (32 * 32 * 32) * 64];
 
         let huffman = to_huffman(&fields);
         let ratio = huffman.len() as f64 / (fields.len() * std::mem::size_of::<usize>()) as f64;

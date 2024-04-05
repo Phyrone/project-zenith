@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 
 use hashbrown::HashMap;
 use rayon::prelude::*;
-use slab::Slab;
+
 
 pub type AnyComponent = dyn Any + Send + Sync;
 
@@ -123,7 +123,7 @@ impl BundleRegistry {
     }
 
     fn determine_next_bundle_id(&mut self) -> u32 {
-        if (self.next_id == u32::MAX) {
+        if self.next_id == u32::MAX {
             panic!("out of available bundle ids")
         }
         self.next_id += 1;
