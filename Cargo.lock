@@ -3539,7 +3539,6 @@ dependencies = [
  "huffman-coding",
  "itertools 0.12.1",
  "lz4_flex",
- "num-traits",
  "packedvec",
  "prost",
  "prost-build",
@@ -3558,7 +3557,6 @@ dependencies = [
  "structdoc",
  "subenum",
  "unique-type-id",
- "unsafe-any",
  "unstructured",
  "walkdir",
  "zstd 0.13.1",
@@ -8172,12 +8170,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "traitobject"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efd1f82c56340fdf16f2a953d7bda4f8fdffba13d93b00844c25572110b26079"
-
-[[package]]
 name = "triomphe"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8334,15 +8326,6 @@ checksum = "fc1de2c688dc15305988b563c3854064043356019f97a4b46276fe734c4f07ea"
 dependencies = [
  "crypto-common",
  "subtle",
-]
-
-[[package]]
-name = "unsafe-any"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f30360d7979f5e9c6e6cea48af192ea8fab4afb3cf72597154b8f08935bc9c7f"
-dependencies = [
- "traitobject",
 ]
 
 [[package]]
