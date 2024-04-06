@@ -22,7 +22,7 @@ use game2::mono_bundle::MonoBundle;
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use crate::world::chunk::TextureIden;
-use crate::world::material::{MaterialDescription, MaterialRegistry};
+use crate::world::material::MaterialDescription;
 
 const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
@@ -49,14 +49,14 @@ impl Voxel {
         self.material_description.is_translucent()
     }
 
-    pub fn id(&self) -> u32 {
-        self.id & !(0b111 << 29)
+    pub fn id(&self) -> usize {
+        self.material_description.id
     }
 }
 
 impl block_mesh::Voxel for Voxel {
     fn get_visibility(&self) -> VoxelVisibility {
-        if self.id == 0 {
+        if self.material_description.id == 0 {
             VoxelVisibility::Empty
         } else if self.translucent() {
             VoxelVisibility::Translucent
@@ -83,8 +83,9 @@ impl ChunkDataEntry {
     ) -> Voxel {
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
-            ChunkDataEntry::Block(material, data) =>
-                Voxel::new(material.merged_clone(data.clone())),
+            ChunkDataEntry::Block(material, data) => {
+                Voxel::new(material.merged_clone(data.clone()))
+            }
         }
     }
 }

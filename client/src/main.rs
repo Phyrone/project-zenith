@@ -6,7 +6,6 @@ use bevy::prelude::*;
 use bevy::render::primitives::{Aabb, Frustum};
 use bevy::utils::info;
 use bevy::DefaultPlugins;
-use bevy::DefaultPlugins;
 use bevy_atmosphere::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use clap::Parser;
@@ -20,10 +19,8 @@ use crate::startup::{init_logger, ClientStartupError, StartupParams};
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage, ClientChunkData};
 use crate::world::chunk::chunk_render_mesh::ChunkRenderErrand;
 use crate::world::chunk::VoxelWorldFixedChunkPosition;
-use crate::world::material::MaterialRegistry;
 use crate::world::ClientWorldPlugin;
 use bevy::render::render_resource::ShaderRef::Handle;
-use bevy::DefaultPlugins;
 
 pub mod discord;
 mod startup;
@@ -156,7 +153,9 @@ fn test_textures(
             unlit: true,
             ..default()
         },
-        extension: BlockMaterial,
+        extension: BlockMaterial{
+            
+        },
     });
     let dirt_texture = materials.add(ExtendedMaterial {
         base: StandardMaterial {
