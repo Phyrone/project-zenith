@@ -30,7 +30,7 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies
         working-directory: page
-        run: yarn install --immutable
+        run: yarn install --frozen-lockfile
       - name: Build
         working-directory: page
         run: yarn build --out-dir=dist
