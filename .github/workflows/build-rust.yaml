@@ -1,8 +1,5 @@
 on:
   push:
-    branches:
-      - "!renovate/*"
-      - "!dependabot/*"
     paths:
       - '*.rs'
       - '**/Cargo.toml'
