@@ -1,0 +1,74 @@
+on:
+  push:
+    paths:
+      - 'page/**'
+      - '.github/workflows/build-page.yaml'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'bun.lockdb'
+  pull_request:
+    branches-ignore:
+      - renovate/*
+      - dependabot/*
+    paths:
+      - 'page/**'
+      - '.github/workflows/build-page.yaml'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'bun.lockdb'
+name: Page
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          # Since bun supports exporting yarn.lock this is very convenient
+          cache: 'yarn'
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          key: bun-${{ runner.os }}-page-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
+          restore-keys: |
+            bun-${{ runner.os }}-page-
+      - name: Install dependencies
+        working-directory: page
+        #run: bun install --from-lockfile
+        # Temporary use yarn instead of bun
+        #  https://github.com/oven-sh/bun/issues/2257
+        run: yarn install --immutable
+      - name: Build
+        working-directory: page
+        run: bun run build --out-dir=dist
+      - name: Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: page/dist
+  deploy:
+    needs:
+      - build
+    permissions:
+      pages: write
+      id-token: write
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      cancel-in-progress: true
+      group: "${{ github.workflow }}-${{ github.ref }}"
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        id: 'deployment'

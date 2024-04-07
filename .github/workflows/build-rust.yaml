@@ -1,0 +1,58 @@
+on:
+  push:
+    branches-ignore:
+      - renovate/*
+      - dependabot/*
+name: Build Rust
+jobs:
+  build:
+    name: Build ${{ matrix.target.build_target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO windows?
+        target:
+          - os: ubuntu-latest
+            build_target: x86_64-unknown-linux-gnu
+          #- os: ubuntu-latest
+          #  build_target: aarch64-unknown-linux-gnu
+          #  # At the moment there is no runner with arm architecture so we skip this for now
+          #  compile_only: true
+          #  install: |
+          #    sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          - os: macos-latest
+            build_target: x86_64-apple-darwin
+          #- os: macos-latest
+          #  build_target: aarch64-apple-darwin
+          #  # At the moment there is no runner with arm architecture so we skip this for now
+          #  compile_only: true
+
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target.build_target }}
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+      - name: Install Dependencies
+        if: ${{ matrix.target.install }}
+        run: ${{ matrix.target.install }}
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Check Fmt
+        run: cargo fmt --all --check --verbose -- --color=always
+      - name: Lint
+        run: cargo clippy --target ${{ matrix.target.build_target }} --workspace --all-features
+      - name: Build
+        run: cargo build --target ${{ matrix.target.build_target }} --workspace
+      - name: Test
+        if: ${{ matrix.target.compile_only != 'true' }}
+        run: cargo test --target ${{ matrix.target.build_target }} --workspace --all-features
+      - name: Build (Release)
+        run: cargo build --target ${{ matrix.target.build_target }} --workspace --release
+      - name: Benchmark
+        if: ${{ matrix.target.compile_only != 'true' }}
+        run: cargo bench --target ${{ matrix.target.build_target }} --workspace --all-features
