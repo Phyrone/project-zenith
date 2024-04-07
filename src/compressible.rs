@@ -67,8 +67,6 @@ where
     }
 }
 
-
-
 impl<T> Compressible<T> for T
 where
     T: serde::Serialize + serde::de::DeserializeOwned,

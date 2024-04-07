@@ -153,9 +153,7 @@ fn test_textures(
             unlit: true,
             ..default()
         },
-        extension: BlockMaterial{
-            
-        },
+        extension: BlockMaterial {},
     });
     let dirt_texture = materials.add(ExtendedMaterial {
         base: StandardMaterial {

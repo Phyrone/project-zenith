@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 
-
 use huffman_coding::{HuffmanReader, HuffmanTree, HuffmanWriter};
 
 pub fn to_huffman(fields: &[usize]) -> Vec<u8> {

@@ -8,14 +8,11 @@ pub struct BlockMaterial {
     tile_size: u32,
 }
 
-impl Default for BlockMaterial{
+impl Default for BlockMaterial {
     fn default() -> Self {
-        Self {
-            tile_size: 1024,
-        }
+        Self { tile_size: 1024 }
     }
 }
-
 
 impl MaterialExtension for BlockMaterial {
     fn fragment_shader() -> ShaderRef {

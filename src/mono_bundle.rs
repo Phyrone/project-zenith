@@ -16,7 +16,7 @@ impl MonoBundle {
             components: HashMap::new(),
         }
     }
-    
+
     pub fn all(&self) -> Vec<&AnyComponent> {
         self.components
             .values()

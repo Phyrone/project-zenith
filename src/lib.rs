@@ -113,7 +113,7 @@ impl AxialRotation {
 
 /// Indicates the face of a block, chunk or some other block-like object.
 #[repr(u8)]
-#[derive(Debug,Default, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Component)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Component)]
 pub enum Direction {
     #[default]
     East = DIRECTION_EAST as u8,
@@ -273,8 +273,6 @@ impl<T> WithFixedSizeExt<T> for Vec<T> {
 mod test_perspective_faced_index {
     use std::ops::Range;
 
-    
-
     const DIMENSION_SIZE: usize = 4;
     const DIMENSION_FACE_SURFACE: usize = DIMENSION_SIZE * DIMENSION_SIZE;
     const DIMENSION_VOLUME: usize = DIMENSION_SIZE * DIMENSION_SIZE * DIMENSION_SIZE;
@@ -328,7 +326,6 @@ mod test_perspective_faced_index {
     ];
 
     //@formatter:on
-
 
     /*
     #[test]

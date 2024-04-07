@@ -6,7 +6,6 @@ use std::fmt::{Debug, Formatter};
 use hashbrown::HashMap;
 use rayon::prelude::*;
 
-
 pub type AnyComponent = dyn Any + Send + Sync;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

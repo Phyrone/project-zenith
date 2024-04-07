@@ -15,9 +15,7 @@ pub struct StorageCompressed;
 
 pub struct StorageUncompressed;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive()]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync> {
     palette: Vec<ITEM>,
     data: PackedVec<usize>,
@@ -46,8 +44,6 @@ where
         self.data = Self::empty_grid()
     }
 }
-
-
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
 where

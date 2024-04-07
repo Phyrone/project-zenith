@@ -2,16 +2,13 @@
 
 use std::net::{IpAddr, SocketAddr};
 
-
-
-
 mod agent;
 mod extension;
 mod world;
 
+mod savegame;
 #[cfg(test)]
 mod tests;
-mod savegame;
 
 async fn a() {
     let endpoint =

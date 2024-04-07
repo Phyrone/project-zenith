@@ -6,19 +6,19 @@ use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::Face;
 use bevy::utils::petgraph::visit::Walker;
-use block_mesh::{
-    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
-    UnorientedQuad, VoxelVisibility,
-};
 use block_mesh::ndshape::RuntimeShape;
 use block_mesh::VoxelVisibility::Translucent;
+use block_mesh::{
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, UnorientedQuad,
+    VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
+};
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rayon::prelude::*;
 
-use game2::{CHUNK_SIZE, Direction};
 use game2::bundle::Bundle;
 use game2::mono_bundle::MonoBundle;
+use game2::{Direction, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use crate::world::chunk::TextureIden;
