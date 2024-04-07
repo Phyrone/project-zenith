@@ -43,10 +43,7 @@ pub fn as_bytes(fields: &[usize]) -> &[u8] {
     //this is unsafe because we represent the data as different on wich it orginally not is
     //since we only use the raw bytes here, this is safe as long as the length is correct
     let bytes = unsafe {
-        std::slice::from_raw_parts(
-            bytes.as_ptr() as *const u8,
-            std::mem::size_of_val(bytes),
-        )
+        std::slice::from_raw_parts(bytes.as_ptr() as *const u8, std::mem::size_of_val(bytes))
     };
     bytes
 }
