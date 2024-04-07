@@ -42,11 +42,12 @@ const config: Config = {
             {
                 docs: {
                     sidebarPath: './src/sidebars/sidebars.ts',
-                    path: 'docs/user',
+                    sidebarCollapsed: true,
+                    path: 'docs',
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl:
-                        'https://github.com/Phyrone/game2/tree/main/docs/user',
+                        'https://github.com/Phyrone/game2/tree/main/docs',
                     remarkPlugins: [remarkMath],
                     rehypePlugins: [rehypeKatex],
                 },
@@ -66,19 +67,7 @@ const config: Config = {
             } satisfies Preset.Options,
         ],
     ],
-    plugins: [
-        [
-            '@docusaurus/plugin-content-docs',
-            {
-                id: 'architecture-docs',
-                path: 'docs/architecture',
-                routeBasePath: 'architecture',
-                sidebarPath: './src/sidebars/sidebars.ts',
-                editUrl:
-                    'https://github.com/Phyrone/game2/tree/main/docs/architecture',
-            },
-        ]
-    ],
+    plugins: [],
     themes: ['@docusaurus/theme-mermaid'],
     themeConfig: {
         // Replace with your project's social card
@@ -101,7 +90,7 @@ const config: Config = {
                 },
                 {
                     type: 'docSidebar',
-                    sidebarId: 'tutorialSidebar',
+                    sidebarId: 'docsSidebar',
                     position: 'left',
                     label: 'Docs',
                 },
@@ -119,21 +108,6 @@ const config: Config = {
         footer: {
             style: 'dark',
             links: [
-                {
-                    title: 'Docs',
-                    items: [
-                        {
-                            //type: 'docSidebar',
-                            //sidebarId: 'tutorialSidebar',
-                            label: 'Tutorial',
-                            to: '/docs/',
-                        },
-                        {
-                            label: 'Architecture',
-                            to: '/architecture/',
-                        }
-                    ],
-                },
                 /*
                 {
                     title: 'Community',
