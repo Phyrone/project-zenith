@@ -48,7 +48,7 @@ const config: Config = {
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl:
-                        'https://github.com/Phyrone/game2/tree/main/docs',
+                        'https://github.com/Phyrone/project-zenith/edit/main/page/',
                     remarkPlugins: [remarkMath],
                     rehypePlugins: [rehypeKatex],
                 },
@@ -60,7 +60,7 @@ const config: Config = {
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl:
-                        'https://github.com/Phyrone/game2/tree/main/blog',
+                        'https://github.com/Phyrone/project-zenith/edit/main/page/',
                 },
                 theme: {
                     customCss: './src/css/custom.css',
