@@ -4,7 +4,6 @@
     "config:recommended"
   ],
   "addLabels": [
-    "renovate",
     "dependencies"
   ],
   "rebaseWhen": "behind-base-branch"

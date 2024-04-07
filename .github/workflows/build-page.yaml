@@ -1,18 +1,20 @@
 on:
   push:
+    branches:
+      - "!renovate/*"
+      - "!dependabot/*"
     paths:
       - 'page/**'
       - '.github/workflows/build-page.yaml'
       - 'package.json'
       - 'yarn.lock'
   pull_request:
-    branches-ignore:
-      - renovate/*
     paths:
       - 'page/**'
       - '.github/workflows/build-page.yaml'
       - 'package.json'
       - 'yarn.lock'
+
 name: Page
 jobs:
   build:

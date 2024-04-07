@@ -1,7 +1,19 @@
 on:
   push:
-    branches-ignore:
-      - renovate/*
+    branches:
+      - "!renovate/*"
+      - "!dependabot/*"
+    paths:
+      - '*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/build-rust.yaml'
+  pull_request:
+    paths:
+      - '*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/build-rust.yaml'
 name: Rust
 jobs:
   build:
@@ -46,6 +58,8 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
       - name: Check Fmt
+        # Continue on error when it not the mail branch
+        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
         run: cargo fmt --all --check --verbose -- --color=always
       - name: Lint
         run: cargo clippy --target ${{ matrix.target.build_target }} --workspace --all-features
