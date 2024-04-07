@@ -45,7 +45,7 @@ pub fn as_bytes(fields: &[usize]) -> &[u8] {
     let bytes = unsafe {
         std::slice::from_raw_parts(
             bytes.as_ptr() as *const u8,
-            bytes.len() * std::mem::size_of::<usize>(),
+            std::mem::size_of_val(bytes),
         )
     };
     bytes

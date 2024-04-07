@@ -29,20 +29,20 @@ fn dev_flat_chunk_generator_system(
         let _block_data = if chunk.y <= 0 {
             let _block_data = BlockData::new(Some(Entity::from_raw(1)));
 
-            let data = ChunkBlockData {
-                blocks: Box::new(
-                    [[[BlockData::default(); CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
-                        CHUNK_SIZE as usize],
-                ),
-            };
+            
 
-            data
+            ChunkBlockData {
+                blocks: Box::new(
+                    [[[BlockData::default(); CHUNK_SIZE]; CHUNK_SIZE];
+                        CHUNK_SIZE],
+                ),
+            }
         } else {
             //TODO generate flat chunk
             ChunkBlockData {
                 blocks: Box::new(
-                    [[[BlockData::default(); CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
-                        CHUNK_SIZE as usize],
+                    [[[BlockData::default(); CHUNK_SIZE]; CHUNK_SIZE];
+                        CHUNK_SIZE],
                 ),
             }
         };

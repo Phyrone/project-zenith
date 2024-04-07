@@ -181,7 +181,7 @@ where
         });
     }
 
-    pub fn iter<'s>(&'s self) -> impl Iterator<Item = &'s ITEM> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &'_ ITEM> + '_ {
         self.data
             .iter()
             .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })

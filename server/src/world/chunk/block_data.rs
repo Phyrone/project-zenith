@@ -8,7 +8,7 @@ use crate::world::block::BlockData;
 
 #[derive(Debug, Clone, Component, Serialize, Deserialize, Hash, Ord, PartialOrd, PartialEq, Eq)]
 pub struct ChunkBlockData {
-    pub blocks: Box<[[[BlockData; CHUNK_SIZE as usize]; CHUNK_SIZE as usize]; CHUNK_SIZE as usize]>,
+    pub blocks: Box<[[[BlockData; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE]>,
 }
 
 #[cfg(test)]
@@ -34,7 +34,7 @@ mod test {
                     _ => Some(Entity::from_raw(random)),
                 };
                 for z in 0..CHUNK_SIZE {
-                    a.blocks[x as usize][y as usize][z as usize] = BlockData::new(material);
+                    a.blocks[x][y][z] = BlockData::new(material);
                 }
             }
         }
