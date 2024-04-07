@@ -23,6 +23,7 @@ const config: Config = {
 
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
+    trailingSlash: true,
 
     markdown: {
         mermaid: true,
