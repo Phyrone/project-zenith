@@ -38,6 +38,12 @@ hex = "0.4.3"
 huffman-coding = "0.1.2"
 rkyv = { version = "0.7.44", features = ["hashbrown", "uuid", "validation", "archive_be"] }
 rclite = "0.2.4"
+unicase = "2.7.0"
+rmp-serde = "1.1.2"
+froggy = "0.4.4"
+slotmap = { version = "1.0.7", features = ["serde"] }
+error-stack = { version = "0.4.1", features = ["serde", "anyhow"] }
+rmp = "0.8.12"
 
 [build-dependencies]
 error-stack = "0.4.1"

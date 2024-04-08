@@ -44,7 +44,7 @@ message PacketPlayServer{
 /* == Entity Stuff == */
 message PacketPlayServerSetEntity{
   int32 entityId = 0x01;
-  common.ResourceIdentifier entityType = 0x02;
+  common.ResourceKey entityType = 0x02;
 }
 message PacketPlayServerRemoveEntity{
   int32 entityId = 0x01;
@@ -104,7 +104,7 @@ message PacketPlayServerPlaySound{
     int32 entity = 0x02;
   }
 
-  common.ResourceIdentifier sound = 0x10;
+  common.ResourceKey sound = 0x10;
   float volume = 0x11;
   float pitch = 0x12;
   SoundCategory category = 0x13;

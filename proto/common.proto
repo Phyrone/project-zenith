@@ -61,23 +61,9 @@ message MessageFormating{
   reserved 0x0F; //font
 }
 
-
-//resource keys can be used to reference resources like blocks, items, entities, etc.
 message ResourceKey{
-  oneof key{
-    //when indexed
-    uint64 index = 0x01;
-    ResourceIdentifier identifier = 0x02;
-  }
-  //additional data is if present encoded in messagepack format
-  optional bytes data = 0x0F;
-}
-
-message ResourceIdentifier{
   //null = core game
-  optional  string namespace = 0x01;
+  string namespace = 0x01;
   string id = 0x02;
-  //maybe for common variants e.g. wood type
-  optional  uint32 variant = 0x03;
 }
 

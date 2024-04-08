@@ -1,50 +1,30 @@
 use std::io::{Read, Write};
+use std::mem::{size_of, size_of_val};
 
 use huffman_coding::{HuffmanReader, HuffmanTree, HuffmanWriter};
+use rkyv::{Archive, CheckBytes, Deserialize, Serialize};
+use rkyv::de::deserializers::SharedDeserializeMap;
+use rkyv::ser::serializers::AllocSerializer;
+use rkyv::validation::validators::DefaultValidator;
 
-pub fn to_huffman(fields: &[usize]) -> Vec<u8> {
-    let bytes = as_bytes(fields);
-    let tree = HuffmanTree::from_data(bytes);
 
-    let mut output = Vec::new();
-    output
-        .write_all(&tree.to_table())
-        .expect("writing the tree to the vec should not fail");
-
-    let mut writer = HuffmanWriter::new(&mut output, &tree);
-    writer
-        .write_all(bytes)
-        .expect("writing data to the vec shoudl not fail");
-    writer.flush().expect("flushing the writer should not fail");
-    //for some reason rust had problems to drop the writer automatically
-    drop(writer);
-    output
-}
-
-fn from_huffman(data: &[u8]) -> Vec<usize> {
-    let tree = HuffmanTree::from_table(&data[0..256]);
-    let data = &data[256..];
-    let mut reader = HuffmanReader::new(data, tree);
-    let mut output = Vec::new();
-    reader
-        .read_to_end(&mut output)
-        .expect("reading from the vec should not fail");
-    if output.len() % std::mem::size_of::<usize>() != 0 {
-        panic!("the length of the output should be a multiple of the size of usize");
-    }
-    unsafe { unsafe_vec_transform::<u8, usize>(output) }
-}
+const EMPTY_RAW_FALLBACK: [u8; 0] = [];
 
 /// represents the usize as a byte array without copying the data
 /// the length of the bytes array is fields.len() * std::mem::size_of::<usize>()
 /// !! Keep in mind that the endianness of bytes varies between systems. !!
-pub fn as_bytes(fields: &[usize]) -> &[u8] {
-    let bytes = fields;
+pub fn raw_bytes<'a, T>(object: &'a T) -> &'a [u8]
+    where
+        T: Sized,
+{
+    let size: usize = size_of::<T>();
+    if size == 0 {
+        return &EMPTY_RAW_FALLBACK;
+    }
+
     //this is unsafe because we represent the data as different on wich it orginally not is
     //since we only use the raw bytes here, this is safe as long as the length is correct
-    let bytes = unsafe {
-        std::slice::from_raw_parts(bytes.as_ptr() as *const u8, std::mem::size_of_val(bytes))
-    };
+    let bytes = unsafe { std::slice::from_raw_parts((object as *const T) as *const u8, size) };
     bytes
 }
 
@@ -81,6 +61,10 @@ pub unsafe fn unsafe_vec_transform<From, To>(from: Vec<From>) -> Vec<To> {
     Vec::from_raw_parts(ptr, length, capacity)
 }
 
+pub fn into_percent(value: f64) -> String {
+    format!("{:.2}%", value * 100.0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,18 +72,13 @@ mod tests {
     #[test]
     fn test_as_bytes() {
         let fields = [1, 2, 3, 4];
-        let bytes = as_bytes(&fields);
-        assert_eq!(bytes.len(), 4 * std::mem::size_of::<usize>());
+        let expected_size =std::mem::size_of_val(&fields);
+        let bytes = raw_bytes(&fields);
+        let hex = hex::encode(bytes);
+        println!("bytes: {}", hex);
+        assert_eq!(bytes.len(), expected_size);
     }
 
-    #[test]
-    fn test_huffman() {
-        let fields = vec![0; (32 * 32 * 32) * 64];
 
-        let huffman = to_huffman(&fields);
-        let ratio = huffman.len() as f64 / (fields.len() * std::mem::size_of::<usize>()) as f64;
-        let fields2 = from_huffman(&huffman);
-        println!("compression ratio: {}", ratio);
-        assert_eq!(fields, fields2);
-    }
+    
 }

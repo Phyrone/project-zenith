@@ -3134,6 +3134,7 @@ checksum = "27a72baa257b5e0e2de241967bc5ee8f855d6072351042688621081d66b2a76b"
 dependencies = [
  "anyhow",
  "rustc_version 0.4.0",
+ "serde",
 ]
 
 [[package]]
@@ -3368,6 +3369,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "froggy"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70d94d84c0ac571094fabf5b11ec06816e0b6784b94892ce9a3185e8a78d3a5b"
+dependencies = [
+ "spin 0.4.10",
+]
+
+[[package]]
 name = "fs2"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3534,6 +3544,7 @@ dependencies = [
  "deepsize",
  "enumset",
  "error-stack",
+ "froggy",
  "hashbrown 0.14.3",
  "hex",
  "huffman-coding",
@@ -3547,15 +3558,19 @@ dependencies = [
  "rayon",
  "rclite",
  "rkyv",
+ "rmp",
+ "rmp-serde",
  "rust-lzma",
  "serde",
  "serde-big-array",
  "serde_json",
  "slab",
+ "slotmap",
  "smallvec",
  "snap",
  "structdoc",
  "subenum",
+ "unicase",
  "unique-type-id",
  "unstructured",
  "walkdir",
@@ -6833,6 +6848,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmp"
+version = "0.8.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f9860a6cc38ed1da53456442089b4dfa35e7cedaa326df63017af88385e6b20"
+dependencies = [
+ "byteorder",
+ "num-traits",
+ "paste",
+]
+
+[[package]]
+name = "rmp-serde"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bffea85eea980d8a74453e5d02a8d93028f3c34725de143085a844ebe953258a"
+dependencies = [
+ "byteorder",
+ "rmp",
+ "serde",
+]
+
+[[package]]
 name = "robust"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7429,6 +7466,7 @@ version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
 dependencies = [
+ "serde",
  "version_check",
 ]
 
@@ -7539,6 +7577,12 @@ dependencies = [
  "tuple_utils",
  "uuid",
 ]
+
+[[package]]
+name = "spin"
+version = "0.4.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ceac490aa12c567115b40b7b7fceca03a6c9d53d5defea066123debc83c5dc1f"
 
 [[package]]
 name = "spin"

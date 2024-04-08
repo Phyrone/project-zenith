@@ -1,4 +1,3 @@
-use bevy::utils::petgraph::visit::Walker;
 use packedvec::PackedVec;
 
 pub fn lzw_compress_raw<I>(

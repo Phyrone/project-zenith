@@ -4,6 +4,11 @@ package chunk;
 
 import "common.proto";
 
+message ChunkDataEntry{
+  common.ResourceKey resource = 1;
+  optional bytes data = 2;
+}
+
 message ChunkData{
   //must have at least enough entries to make all indexes in data valid
   //TODO maybe a global palette (world scope)?

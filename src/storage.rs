@@ -1,9 +1,7 @@
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash};
 use std::io::{Read, Write};
 use std::ops::{Not, Range};
-
-use bevy::utils::petgraph::visit::Walker;
 use huffman_coding::HuffmanWriter;
 use itertools::Itertools;
 use packedvec::PackedVec;

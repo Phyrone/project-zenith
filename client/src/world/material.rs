@@ -18,6 +18,11 @@ impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {}
 }
 
+pub struct MaterialRegistry{
+    
+}
+
+
 #[derive(
     Debug,
     Default,
@@ -36,7 +41,7 @@ pub struct MaterialDescription {
 }
 
 impl MaterialDescription {
-    pub const TRANSLUCENT_KEY: &'static str = "mesh/translucent";
+    pub const TRANSLUCENT_KEY: &'static str = "geometrie/translucent";
     const AIR_MATERIAL_ID: usize = 0;
     pub const AIR: MaterialDescription = MaterialDescription {
         id: Self::AIR_MATERIAL_ID,
