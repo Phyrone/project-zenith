@@ -14,7 +14,8 @@ on:
 
 name: Page
 jobs:
-  build:
+  build-docusaurus:
+    name: Build Docusaurus
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,9 +36,27 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: page/dist
+  build-rust-docs:
+    name: Build Rust Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Build Docs
+        run: cargo doc --workspace --all-features
+      - name: Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          path: target/doc
+
   deploy:
     needs:
-      - build
+      - build-docusaurus
     permissions:
       pages: write
       id-token: write

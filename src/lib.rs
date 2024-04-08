@@ -10,6 +10,7 @@ pub mod material;
 pub mod mono_bundle;
 pub mod network;
 pub mod proto;
+pub mod registry;
 pub mod storage;
 pub mod utils;
 

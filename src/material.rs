@@ -1,5 +1,7 @@
 use unstructured::Document;
 
+//TODO document
+/// A resource key represents an identifier for a resource in its scope.
 #[derive(
     Debug,
     Eq,
