@@ -37,9 +37,6 @@ pub struct BlockData {
     pub data: Option<Box<Document>>,
 }
 
-
-
-
 #[cfg(test)]
 mod test {
     use serde_json::json;

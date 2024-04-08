@@ -18,10 +18,7 @@ impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {}
 }
 
-pub struct MaterialRegistry{
-    
-}
-
+pub struct MaterialRegistry {}
 
 #[derive(
     Debug,

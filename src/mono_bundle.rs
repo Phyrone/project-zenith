@@ -96,7 +96,7 @@ mod test {
         bundle.insert(TestComponentA);
         bundle.insert(TestComponentB);
         bundle.insert(TestComponentC);
-        
+
         assert!(bundle.contains::<TestComponentA>());
         assert!(bundle.contains::<TestComponentB>());
         assert!(bundle.contains::<TestComponentC>());

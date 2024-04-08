@@ -1,11 +1,11 @@
-use std::fmt::Debug;
-use std::hash::{Hash};
-use std::io::{Read, Write};
-use std::ops::{Not, Range};
 use huffman_coding::HuffmanWriter;
 use itertools::Itertools;
 use packedvec::PackedVec;
 use rayon::prelude::*;
+use std::fmt::Debug;
+use std::hash::Hash;
+use std::io::{Read, Write};
+use std::ops::{Not, Range};
 
 use crate::lzw::{lzw_compress_raw, lzw_decompress};
 

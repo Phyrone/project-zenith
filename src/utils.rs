@@ -1,12 +1,4 @@
-use std::io::{Read, Write};
-use std::mem::{size_of, size_of_val};
-
-use huffman_coding::{HuffmanReader, HuffmanTree, HuffmanWriter};
-use rkyv::{Archive, CheckBytes, Deserialize, Serialize};
-use rkyv::de::deserializers::SharedDeserializeMap;
-use rkyv::ser::serializers::AllocSerializer;
-use rkyv::validation::validators::DefaultValidator;
-
+use std::mem::size_of;
 
 const EMPTY_RAW_FALLBACK: [u8; 0] = [];
 
@@ -14,8 +6,8 @@ const EMPTY_RAW_FALLBACK: [u8; 0] = [];
 /// the length of the bytes array is fields.len() * std::mem::size_of::<usize>()
 /// !! Keep in mind that the endianness of bytes varies between systems. !!
 pub fn raw_bytes<'a, T>(object: &'a T) -> &'a [u8]
-    where
-        T: Sized,
+where
+    T: Sized,
 {
     let size: usize = size_of::<T>();
     if size == 0 {
@@ -72,13 +64,10 @@ mod tests {
     #[test]
     fn test_as_bytes() {
         let fields = [1, 2, 3, 4];
-        let expected_size =std::mem::size_of_val(&fields);
+        let expected_size = std::mem::size_of_val(&fields);
         let bytes = raw_bytes(&fields);
         let hex = hex::encode(bytes);
         println!("bytes: {}", hex);
         assert_eq!(bytes.len(), expected_size);
     }
-
-
-    
 }
