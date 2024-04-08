@@ -1,11 +1,12 @@
-use huffman_coding::HuffmanWriter;
-use itertools::Itertools;
-use packedvec::PackedVec;
-use rayon::prelude::*;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::ops::{Not, Range};
+
+use huffman_coding::HuffmanWriter;
+use itertools::Itertools;
+use packedvec::PackedVec;
+use rayon::prelude::*;
 
 use crate::lzw::{lzw_compress_raw, lzw_decompress};
 
@@ -52,23 +53,23 @@ where
     }
 }
 
-impl<const LIMIT: usize, ITEM> Storage<LIMIT, ITEM>
+impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
 where
     ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
     /// creates a storage from an array of items.
     /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
-    /// [blocks] must have a length of [LIMIT]
-    pub fn new(blocks: &Vec<ITEM>) -> Self {
-        if blocks.len() != LIMIT {
+    /// [blocks] must have a length of [SIZE]
+    pub fn new(blocks: &[ITEM]) -> Self {
+        if blocks.len() != SIZE {
             panic!(
-                "invalid block array size (must be {} but is {})",
-                LIMIT,
+                "invalid array size (must be {} but is {})",
+                SIZE,
                 blocks.len()
             );
         }
 
-        let mut palette = blocks.clone();
+        let mut palette = Vec::<ITEM>::from(blocks);
         palette.par_sort_unstable();
         palette.dedup();
         palette.shrink_to_fit();
@@ -103,7 +104,7 @@ where
     }
 
     pub fn set(&mut self, i: usize, block: ITEM) {
-        if i >= LIMIT {
+        if i >= SIZE {
             panic!("index out of bounds");
         }
         let former_palette_id = unsafe { self.data.get_unchecked(i) };
@@ -117,7 +118,7 @@ where
 
     //TODO set many takes to long for large ranges optimize it
     pub fn set_many(&mut self, range: Range<usize>, block: ITEM) {
-        if range.end > LIMIT || range.start > LIMIT {
+        if range.end > SIZE || range.start > SIZE {
             panic!("index out of bounds");
         }
         let mut unpacked = self.data.iter().collect::<Vec<_>>();
@@ -231,7 +232,7 @@ where
             panic!("palette must not be empty");
         }
         if data.is_empty() {
-            let data = vec![0_usize; LIMIT];
+            let data = vec![0_usize; SIZE];
             return Self {
                 palette,
                 data: PackedVec::new(data),
@@ -253,7 +254,7 @@ where
         let decompressed = lzw_decompress(palette.len(), data.into_iter());
         assert_eq!(
             decompressed.len(),
-            LIMIT,
+            SIZE,
             "data must have the same length as the limit"
         );
         Self {

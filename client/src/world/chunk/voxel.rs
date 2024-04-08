@@ -22,7 +22,7 @@ use game2::{Direction, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use crate::world::chunk::TextureIden;
-use crate::world::material::MaterialDescription;
+use crate::world::material::AIR_MATERIAL_ID;
 
 const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
@@ -30,33 +30,28 @@ pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
 
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Voxel {
-    material_description: MaterialDescription,
+    material: usize,
+    //TODO extra data
 }
 
 impl Voxel {
     pub fn empty() -> Self {
         Self {
-            material_description: MaterialDescription::AIR,
+            material: AIR_MATERIAL_ID,
         }
     }
-    pub fn new(material_description: MaterialDescription) -> Self {
+    pub fn new(material: usize) -> Self {
         Self {
-            material_description,
+            material,
         }
     }
-
-    fn translucent(&self) -> bool {
-        self.material_description.is_translucent()
-    }
-
-    pub fn id(&self) -> usize {
-        self.material_description.id
-    }
+    
 }
 
 impl block_mesh::Voxel for Voxel {
     fn get_visibility(&self) -> VoxelVisibility {
-        if self.material_description.id == 0 {
+        
+        if self.material == 0 {
             VoxelVisibility::Empty
         } else if self.translucent() {
             VoxelVisibility::Translucent
@@ -487,7 +482,7 @@ mod test {
 
     use game2::humanize::humanize_memory;
 
-    use crate::world::chunk::voxel3::Voxel;
+    use crate::world::chunk::voxel::Voxel;
 
     #[test]
     fn voxel_size() {

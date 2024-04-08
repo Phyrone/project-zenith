@@ -1,16 +1,13 @@
 use std::any::Any;
 use std::hash::Hash;
-use std::sync::Arc;
 
 use bevy::app::App;
 use bevy::asset::AssetContainer;
 use bevy::prelude::{Plugin, Resource};
-use game2::material::ResourceKey;
-use game2::registry::Registry;
-use hashbrown::HashMap;
 use itertools::Itertools;
-use slab::Slab;
 use unstructured::Document;
+
+use game2::registry::Registry;
 
 #[derive(Debug, Default)]
 pub struct MaterialsPlugin;
@@ -20,10 +17,23 @@ impl Plugin for MaterialsPlugin {
         app.init_resource::<MaterialRegistry>();
     }
 }
+
 #[derive(Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct MaterialRegistryMarker;
 
+pub const AIR_MATERIAL_ID: usize = 0;
+
 pub type MaterialRegistry = Registry<Document, MaterialRegistryMarker>;
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize)]
+pub struct MaterialData(Document);
+
+impl MaterialData{
+    
+    pub fn 
+    
+}
+
 
 #[cfg(test)]
 pub mod test {}

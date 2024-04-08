@@ -12,7 +12,7 @@ use game2::{WithFixedSizeExt, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::ClientChunkData;
 use crate::world::chunk::grid::ChunkGrid;
-use crate::world::chunk::voxel3::{
+use crate::world::chunk::voxel::{
     create_voxel_chunk, voxels_grouped_greedy_mesh, GroupedVoxelMeshes,
 };
 use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};

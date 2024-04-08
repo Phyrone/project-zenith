@@ -4,7 +4,6 @@ use std::sync::Arc;
 use bevy::prelude::Resource;
 use hashbrown::HashMap;
 use slab::Slab;
-use unstructured::Document;
 
 use crate::material::ResourceKey;
 
@@ -50,11 +49,11 @@ where
             id_mapper,
             key_to_data,
         } = self.edit();
-        let mut entry = key_to_data.get(&key);
+        let entry = key_to_data.get(&key);
         let short_key = if let Some(entry) = entry {
             entry.id
         } else {
-            id_mapper.insert(key.clone())
+            id_mapper.insert(key.clone()) + 1
         };
         key_to_data.insert(
             key,
@@ -68,39 +67,39 @@ where
 
     pub fn unregister_material(&mut self, key: &ResourceKey) {
         let RegistryInner {
-            id_mapper: key_shorter,
+            id_mapper,
             key_to_data,
         } = self.edit();
 
         if let Some(entry) = key_to_data.remove(key) {
-            key_shorter.remove(entry.id);
+            id_mapper.remove(entry.id - 1);
         }
     }
 
     pub fn shrink_to_fit(&mut self) {
         let RegistryInner {
-            id_mapper: key_shorter,
+            id_mapper,
             key_to_data,
         } = self.edit();
-        key_shorter.shrink_to_fit();
+        id_mapper.shrink_to_fit();
         key_to_data.shrink_to_fit();
     }
 
     pub fn clear(&mut self) {
         let RegistryInner {
-            id_mapper: key_shorter,
+            id_mapper,
             key_to_data,
         } = self.edit();
-        key_shorter.clear();
+        id_mapper.clear();
         key_to_data.clear();
     }
 
     pub fn reserve(&mut self, additional: usize) {
         let RegistryInner {
-            id_mapper: key_shorter,
+            id_mapper,
             key_to_data,
         } = self.edit();
-        key_shorter.reserve(additional);
+        id_mapper.reserve(additional);
         key_to_data.reserve(additional);
     }
 
@@ -110,11 +109,11 @@ where
     pub fn get_by_id(&self, id: usize) -> Option<&RegistryEntry<T>> {
         self.inner
             .id_mapper
-            .get(id)
+            .get(id + 1)
             .and_then(|key| self.inner.key_to_data.get(key))
     }
     pub fn key_of_id(&self, id: usize) -> Option<&ResourceKey> {
-        self.inner.id_mapper.get(id)
+        self.inner.id_mapper.get(id + 1)
     }
     pub fn id_of_key(&self, key: &ResourceKey) -> Option<usize> {
         self.inner.key_to_data.get(key).map(|entry| entry.id)
