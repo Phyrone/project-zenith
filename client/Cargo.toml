@@ -9,7 +9,7 @@ edition = "2021"
 bevy = { version = "0.13.0", features = ["async-io", "multi-threaded", "webp"] }
 clap = { version = "4.4.12", features = ["cargo", "derive", "env", "string", "unicode"] }
 error-stack = "0.4.1"
-fast_log = { version = "1.6.10", features = ["zip"] }
+fast_log = { version = "1.6.16", features = ["zip"] }
 log = { version = "0.4.20", features = ["serde"] }
 serde = { version = "1.0.192", features = ["derive"] }
 bimap = { version = "0.6.3", features = ["serde"] }
