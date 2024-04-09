@@ -29,16 +29,16 @@ pub const AIR_MATERIAL_ID: usize = 0;
 pub type MaterialRegistry = Registry<MaterialData, MaterialRegistryMarker>;
 
 #[derive(
-Debug,
-Default,
-Clone,
-PartialEq,
-Eq,
-Ord,
-PartialOrd,
-Hash,
-serde::Serialize,
-serde::Deserialize,
+    Debug,
+    Default,
+    Clone,
+    PartialEq,
+    Eq,
+    Ord,
+    PartialOrd,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 pub struct MaterialData(Document);
 
@@ -72,7 +72,7 @@ impl MaterialData {
     pub const RENDER_KEY: &'static str = "render";
     pub const KEY_GEOMETRY: &'static str = format!("{}/geometry", Self::RENDER_KEY).as_str();
     pub const KEY_PHYSICS: &'static str = "physics";
-    
+
     pub fn geometry(&self) -> Option<&Document> {
         self.select(Self::KEY_GEOMETRY).ok()
     }
@@ -84,17 +84,12 @@ impl MaterialData {
     }
     pub fn parse_voxel_visibility(data_unstructured: &Document) -> Option<VoxelVisibility> {
         match data_unstructured {
-            Unstructured::String(data) => {
-                match data.to_lowercase().as_str() {
-                    "transparent" | "translucent" | "t"
-                    => Some(VoxelVisibility::Translucent),
-                    "solid" | "opaque" | "o"
-                    => Some(VoxelVisibility::Opaque),
-                    "empty" | "air" | "e"
-                    => Some(VoxelVisibility::Empty),
-                    _ => None
-                }
-            }
+            Unstructured::String(data) => match data.to_lowercase().as_str() {
+                "transparent" | "translucent" | "t" => Some(VoxelVisibility::Translucent),
+                "solid" | "opaque" | "o" => Some(VoxelVisibility::Opaque),
+                "empty" | "air" | "e" => Some(VoxelVisibility::Empty),
+                _ => None,
+            },
             _ => None,
         }
     }

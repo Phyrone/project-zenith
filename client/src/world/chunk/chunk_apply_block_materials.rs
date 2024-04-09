@@ -21,6 +21,5 @@ fn apply_standard_materials_system(
 ) {
     surfaces.par_iter().for_each(|(entity, surface)| {
         let data = surface;
-        
     })
 }

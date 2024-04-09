@@ -4,19 +4,19 @@ use unstructured::Document;
 //TODO document
 /// A resource key represents an identifier for a resource in its scope.
 #[derive(
-Debug,
-Eq,
-PartialEq,
-Clone,
-Ord,
-PartialOrd,
-Hash,
-serde::Serialize,
-serde::Deserialize,
-deepsize::DeepSizeOf,
-rkyv::Archive,
-rkyv::Serialize,
-rkyv::Deserialize,
+    Debug,
+    Eq,
+    PartialEq,
+    Clone,
+    Ord,
+    PartialOrd,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
+    deepsize::DeepSizeOf,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
 )]
 pub struct ResourceKey {
     #[serde(rename = "n")]
@@ -27,15 +27,13 @@ pub struct ResourceKey {
 
 impl ResourceKey {
     const NAMESPACE_CORE: &'static str = "core";
-
-
 }
 
 struct NoSlashValidator;
 impl WithoutQuotingValidator for NoSlashValidator {
     fn next(&mut self, pcp: PartialCodePoint) -> bool {
         pcp.as_u8() != b'/';
-        
+
         todo!()
     }
 
@@ -44,9 +42,8 @@ impl WithoutQuotingValidator for NoSlashValidator {
     }
 }
 
-
 #[derive(
-Debug, Eq, PartialEq, Clone, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize,
+    Debug, Eq, PartialEq, Clone, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize,
 )]
 pub struct BlockData {
     #[serde(rename = "m")]

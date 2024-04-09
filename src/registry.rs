@@ -38,8 +38,8 @@ struct RegistryInner<T> {
 }
 
 impl<T, M> Registry<T, M>
-    where
-        T: Default + Clone + Hash,
+where
+    T: Default + Clone + Hash,
 {
     fn edit(&mut self) -> &mut RegistryInner<T> {
         Arc::make_mut(&mut self.inner)
