@@ -6,5 +6,10 @@
   "addLabels": [
     "dependencies"
   ],
-  "rebaseWhen": "behind-base-branch"
+  "automerge": true,
+  "platformAutomerge": true,
+  "automergeStrategy": "squash",
+  "pruneBranchAfterAutomerge": true,
+  "rebaseWhen": "behind-base-branch",
+  "commitMessagePrefix": "⬆\uFE0F "
 }
