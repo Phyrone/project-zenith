@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use bevy::prelude::Resource;
@@ -37,8 +38,8 @@ struct RegistryInner<T> {
 }
 
 impl<T, M> Registry<T, M>
-where
-    T: Default + Clone + Hash,
+    where
+        T: Default + Clone + Hash,
 {
     fn edit(&mut self) -> &mut RegistryInner<T> {
         Arc::make_mut(&mut self.inner)
@@ -126,11 +127,24 @@ pub struct RegistryEntry<T> {
     pub data: T,
 }
 
+impl<T> Deref for RegistryEntry<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+impl<T> DerefMut for RegistryEntry<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
-    fn create_registry() -> Registry<Document> {
+    fn create_registry() -> Registry<unstructured::Document> {
         Registry::default()
     }
 }

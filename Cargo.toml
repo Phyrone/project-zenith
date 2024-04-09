@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-array-init = "2.1.0"
 bincode = { version = "1.3.3", features = ["i128"] }
 bytemuck = { version = "1.14.0", features = ["aarch64_simd", "wasm_simd"] }
 enumset = { version = "1.1.3", features = ["std", "serde", "alloc"] }
@@ -15,20 +14,16 @@ lz4_flex = "0.11.1"
 packedvec = { version = "1.2.4", features = ["serde"] }
 rayon = "1.8.0"
 serde = { version = "1.0.194", features = ["derive", "rc", "alloc"] }
-serde-big-array = "0.5.1"
 slab = { version = "0.4.9", features = ["serde"] }
 smallvec = { version = "1.11.2", features = ["serde", "union", "const_new", "write"] }
 snap = "1.1.1"
 structdoc = "0.1.4"
-subenum = "1.1.1"
 unstructured = "0.5.1"
 zstd = { version = "0.13.0", features = ["wasm", "bindgen"] }
 bevy = { version = "0.13.0", default-features = false }
 prost = { version = "0.12.3", features = ["std", "prost-derive", "default"] }
 prost-types = "0.12.3"
-bitvec = { version = "1.0.1", features = ["serde"] }
 rust-lzma = "0.6.0"
-unique-type-id = "1.3.0"
 deepsize = { version = "0.2.0", features = ["slab", "hashbrown", "smallvec"] }
 hashbrown = { version = "0.14.3", features = ["rayon", "serde"] }
 ahash = "0.8.9"
@@ -38,12 +33,10 @@ hex = "0.4.3"
 huffman-coding = "0.1.2"
 rkyv = { version = "0.7.44", features = ["hashbrown", "uuid", "validation", "archive_be"] }
 rclite = "0.2.4"
-unicase = "2.7.0"
 rmp-serde = "1.1.2"
-froggy = "0.4.4"
-slotmap = { version = "1.0.7", features = ["serde"] }
 error-stack = { version = "0.4.1", features = ["serde", "anyhow"] }
 rmp = "0.8.12"
+quoted-string = "0.6.1"
 
 [build-dependencies]
 error-stack = "0.4.1"

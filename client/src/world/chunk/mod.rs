@@ -9,7 +9,7 @@ pub mod chunk_data;
 pub mod chunk_render_mesh;
 pub mod grid;
 //pub mod voxel2;
-mod chunk_apply_standart_materials;
+mod chunk_apply_block_materials;
 pub mod voxel;
 
 #[derive(Default, Debug)]

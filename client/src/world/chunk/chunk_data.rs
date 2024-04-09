@@ -98,7 +98,7 @@ pub enum ChunkDataEntry {
     #[default]
     Empty,
     //the referenced material + additional data
-    Block(MaterialDescription, Option<Document>),
+    Block(usize, Option<Box<Document>>),
 }
 
 impl ChunkDataEntry {

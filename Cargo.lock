@@ -3369,15 +3369,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "froggy"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70d94d84c0ac571094fabf5b11ec06816e0b6784b94892ce9a3185e8a78d3a5b"
-dependencies = [
- "spin 0.4.10",
-]
-
-[[package]]
 name = "fs2"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3535,16 +3526,13 @@ name = "game2"
 version = "0.0.1-INDEV"
 dependencies = [
  "ahash 0.8.11",
- "array-init",
  "bevy",
  "bincode",
- "bitvec",
  "bytemuck",
  "criterion",
  "deepsize",
  "enumset",
  "error-stack",
- "froggy",
  "hashbrown 0.14.3",
  "hex",
  "huffman-coding",
@@ -3554,6 +3542,7 @@ dependencies = [
  "prost",
  "prost-build",
  "prost-types",
+ "quoted-string",
  "rand 0.9.0-alpha.1",
  "rayon",
  "rclite",
@@ -3562,16 +3551,11 @@ dependencies = [
  "rmp-serde",
  "rust-lzma",
  "serde",
- "serde-big-array",
  "serde_json",
  "slab",
- "slotmap",
  "smallvec",
  "snap",
  "structdoc",
- "subenum",
- "unicase",
- "unique-type-id",
  "unstructured",
  "walkdir",
  "zstd 0.13.1",
@@ -6400,6 +6384,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoted-string"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a206a30ce37189d1340e7da2ee0b4d65e342590af676541c23a4f3959ba272e"
+
+[[package]]
 name = "radium"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7466,7 +7456,6 @@ version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
 dependencies = [
- "serde",
  "version_check",
 ]
 
@@ -7577,12 +7566,6 @@ dependencies = [
  "tuple_utils",
  "uuid",
 ]
-
-[[package]]
-name = "spin"
-version = "0.4.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ceac490aa12c567115b40b7b7fceca03a6c9d53d5defea066123debc83c5dc1f"
 
 [[package]]
 name = "spin"
@@ -7727,18 +7710,6 @@ dependencies = [
  "tokio",
  "url",
  "webrtc-util",
-]
-
-[[package]]
-name = "subenum"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f5d5dfb8556dd04017db5e318bbeac8ab2b0c67b76bf197bfb79e9b29f18ecf"
-dependencies = [
- "heck 0.4.1",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
