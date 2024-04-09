@@ -6,6 +6,8 @@ on:
       - '**/Cargo.lock'
       - '.github/workflows/build-rust.yaml'
   pull_request:
+    branches-ignore:
+      - renovate/**
     paths:
       - '*.rs'
       - '**/Cargo.toml'
