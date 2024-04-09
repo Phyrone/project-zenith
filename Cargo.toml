@@ -15,7 +15,7 @@ packedvec = { version = "1.2.4", features = ["serde"] }
 rayon = "1.8.0"
 serde = { version = "1.0.194", features = ["derive", "rc", "alloc"] }
 slab = { version = "0.4.9", features = ["serde"] }
-smallvec = { version = "1.11.2", features = ["serde", "union", "const_new", "write"] }
+smallvec = { version = "1.13.2", features = ["serde", "union", "const_new", "write"] }
 snap = "1.1.1"
 structdoc = "0.1.4"
 unstructured = "0.5.1"
