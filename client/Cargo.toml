@@ -15,7 +15,7 @@ serde = { version = "1.0.192", features = ["derive"] }
 bimap = { version = "0.6.3", features = ["serde"] }
 game2 = { path = ".." }
 server = { path = "../server" }
-rayon = "1.8.0"
+rayon = "1.10.0"
 block-mesh = "0.2.0"
 bitvec = { version = "1.0.1", features = ["serde"] }
 bevy_rapier3d = { version = "0.25.0", features = ["wasm-bindgen", "serde", "parallel", "debug-render"] }
