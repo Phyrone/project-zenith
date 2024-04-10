@@ -16,6 +16,7 @@ use crate::world::chunk::voxel::{
     create_voxel_chunk, voxels_grouped_greedy_mesh, GroupedVoxelMeshes,
 };
 use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
+use crate::world::material::MaterialRegistry;
 
 //TODO cancel tasks when chunk is removed
 //TODO cancel tasks when chunk is updated before the task is finished
@@ -35,6 +36,7 @@ impl Plugin for ChunkRenderMeshPlugin {
         app.add_systems(Update, (position_chunks));
     }
 }
+
 #[derive(Debug, Default, Component)]
 #[component(storage = "SparseSet")]
 pub struct ChunkRenderErrand;
@@ -43,6 +45,7 @@ pub struct ChunkRenderErrand;
 pub struct VoxelChunkSurface {
     pub iden: TextureIden,
 }
+
 impl VoxelChunkSurface {}
 
 impl Deref for VoxelChunkSurface {
@@ -72,6 +75,7 @@ pub struct ChunkSurfaceBundle {
 fn create_build_mesh_tasks(
     commands: ParallelCommands,
     chunk_grid: Res<ChunkGrid>,
+    material_registry: Res<MaterialRegistry>,
     chunks: Query<
         (Entity, &ClientChunkData, &VoxelWorldFixedChunkPosition),
         (With<ChunkRenderErrand>),
@@ -89,9 +93,9 @@ fn create_build_mesh_tasks(
             .map(|chunk| chunk.map(|(_, data, _)| data.deref()))
             .collect::<Vec<_>>()
             .into_fixed_size::<6>();
-
+        let registry = material_registry.clone();
         let greedy_mesh_task = pool.spawn(async move {
-            let voxels = create_voxel_chunk(data.deref(), &neighbors, 1);
+            let voxels = create_voxel_chunk(&registry, data.deref(), &neighbors, 1);
             //TODO meshes might be needed in main world later for physics
             //voxels_grouped_mesh(&voxels, resolution, RenderAssetUsages::RENDER_WORLD)
             //TODO replace with greedy meshing (once i made tiling textures work + shader for it)

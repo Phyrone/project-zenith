@@ -12,7 +12,6 @@ use game2::CHUNK_VOLUME;
 
 use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::{ChunkRenderStage, VoxelWorldFixedChunkPosition};
-use crate::world::material::MaterialDescription;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Default)]
 pub struct ChunkDataPlugin;

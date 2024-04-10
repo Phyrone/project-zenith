@@ -1,9 +1,11 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::sync::Arc;
 
 use bevy::prelude::{App, Component, Plugin, SystemSet};
-
 use game2::Direction;
+use crate::world::chunk::voxel::VoxelMaterialDescription;
+use crate::world::texture::VoxelSurfaceTexture;
 
 pub mod chunk_data;
 pub mod chunk_render_mesh;
@@ -57,6 +59,7 @@ enum TextureSplit {
 }
 
 pub struct VoxelTextureIden2(u32);
+
 impl VoxelTextureIden2 {
     const SPLIT_OFFSET: u32 = 30;
     pub fn new(texture: u32, split: TextureSplit) -> Self {
@@ -76,19 +79,8 @@ impl VoxelTextureIden2 {
     }
 }
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct TextureIden(u32, Direction);
-
-impl TextureIden {
-    pub fn new(texture: u32, direction: Direction) -> Self {
-        Self(texture, direction)
-    }
-
-    pub fn texture(&self) -> u32 {
-        self.0
-    }
-
-    pub fn direction(&self) -> Direction {
-        self.1
-    }
+#[derive(Debug, Clone)]
+pub struct TextureIden {
+    pub material: Arc<dyn VoxelMaterialDescription>,
+    pub direction: Direction,
 }

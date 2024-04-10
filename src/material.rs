@@ -29,19 +29,6 @@ impl ResourceKey {
     const NAMESPACE_CORE: &'static str = "core";
 }
 
-struct NoSlashValidator;
-impl WithoutQuotingValidator for NoSlashValidator {
-    fn next(&mut self, pcp: PartialCodePoint) -> bool {
-        pcp.as_u8() != b'/';
-
-        todo!()
-    }
-
-    fn end(&self) -> bool {
-        todo!()
-    }
-}
-
 #[derive(
     Debug, Eq, PartialEq, Clone, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize,
 )]

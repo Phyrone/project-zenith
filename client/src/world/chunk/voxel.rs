@@ -1,77 +1,99 @@
+use std::any::{Any, TypeId};
+use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
+use ahash::AHasher;
 use bevy::log::trace;
-use bevy::prelude::Mesh;
+use bevy::prelude::{Has, Mesh};
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::render::render_resource::Face;
-use bevy::utils::petgraph::visit::Walker;
+use bevy::utils::label::DynHash;
+use block_mesh::{
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
+    UnorientedQuad, VoxelVisibility,
+};
 use block_mesh::ndshape::RuntimeShape;
 use block_mesh::VoxelVisibility::Translucent;
-use block_mesh::{
-    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, UnorientedQuad,
-    VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
-};
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rayon::prelude::*;
+use unstructured::Document;
 
+use game2::{CHUNK_SIZE, Direction};
 use game2::bundle::Bundle;
 use game2::mono_bundle::MonoBundle;
 use game2::registry::RegistryEntry;
-use game2::{Direction, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use crate::world::chunk::TextureIden;
-use crate::world::material::{MaterialRegistry, AIR_MATERIAL_ID};
+use crate::world::material::{AIR_MATERIAL_ID, MaterialRegistry};
 
 const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
 pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
 
-#[derive(Debug, Clone)]
-pub struct Voxel<'render> {
-    registry: &'render MaterialRegistry,
-    material: usize,
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct VoxelMaterialDescription {
+    pub provider: TypeId,
+    pub id: usize,
+    pub metadata: Option<Box<Document>>,
+}
+
+
+#[derive(Debug, Clone, Eq)]
+pub struct Voxel {
+    material: Option<Arc<VoxelMaterialDescription>>,
     //TODO extra data
 }
 
-impl PartialEq<Self> for Voxel<'_> {
+impl PartialEq<Self> for Voxel {
     fn eq(&self, other: &Self) -> bool {
-        self.material == other.material
+        if self.material.is_none() || other.material.is_none() {
+            return false;
+        }
+        if let Some(a) = &self.material {
+            if let Some(b) = &other.material {
+                let mut hasher_1 = AHasher::default();
+                let mut hasher_2 = AHasher::default();
+                a.dyn_hash(&mut hasher_1);
+                b.dyn_hash(&mut hasher_2);
+                hasher_1.finish() == hasher_2.finish()
+            } else {
+                false
+            }
+        } else {
+            other.material.is_none()
+        }
     }
 }
 
-impl Voxel<'_> {
-    pub fn empty(registry: &MaterialRegistry) -> Self {
+impl Voxel {
+    pub fn empty() -> Self {
         Self {
-            registry,
-            material: AIR_MATERIAL_ID,
+            material: None,
         }
     }
-    pub fn new(registry: &MaterialRegistry, material: usize) -> Self {
-        Self { registry, material }
+    pub fn new(material_data: Arc<VoxelMaterialDescription>) -> Self {
+        Self { material: Some(material_data) }
     }
 }
 
-impl block_mesh::Voxel for Voxel<'_> {
+impl block_mesh::Voxel for Voxel {
     fn get_visibility(&self) -> VoxelVisibility {
-        if self.material == AIR_MATERIAL_ID {
-            return VoxelVisibility::Empty;
+        if let Some(material) = &self.material {
+            material.voxel_visibility()
+        } else {
+            VoxelVisibility::Empty
         }
-        self.registry
-            .get_by_id(self.material)
-            .map(|entry| entry.voxel_visibility())
-            .flatten()
-            .unwrap_or(VoxelVisibility::Opaque)
     }
 }
 
-impl block_mesh::MergeVoxel for Voxel<'_> {
-    type MergeValue = usize;
+impl block_mesh::MergeVoxel for Voxel {
+    type MergeValue = Option<u64>;
 
     fn merge_value(&self) -> Self::MergeValue {
-        self.material
+        self.material.as_ref().map(|material| material.hash())
     }
 }
 
@@ -83,9 +105,10 @@ impl ChunkDataEntry {
         _resolution: usize,
         _index: usize,
     ) -> Voxel {
+        registry
         match self {
-            ChunkDataEntry::Empty => Voxel::empty(registry),
-            ChunkDataEntry::Block(material, _) => Voxel::new(registry, *material),
+            ChunkDataEntry::Empty => Voxel::empty(),
+            ChunkDataEntry::Block(material, _) => Voxel::new(*material),
         }
     }
 }
@@ -328,7 +351,10 @@ pub fn construct_grouped_mesh(
                 let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
                 let voxel = &voxel_chunk[pos as usize];
                 (
-                    TextureIden::new(voxel.material, direction),
+                    TextureIden {
+                        material: voxel.material,
+                        direction,
+                    },
                     quad,
                     face.clone(),
                 )

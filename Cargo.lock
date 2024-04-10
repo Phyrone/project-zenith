@@ -2065,6 +2065,7 @@ checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
 name = "client"
 version = "0.0.1-INDEV"
 dependencies = [
+ "ahash 0.8.11",
  "array-init",
  "bevy",
  "bevy-inspector-egui",

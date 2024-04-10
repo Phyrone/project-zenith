@@ -8,9 +8,11 @@ use bevy::prelude::{Plugin, Resource};
 use block_mesh::VoxelVisibility;
 use futures_lite::StreamExt;
 use itertools::Itertools;
+use rclite::Arc;
 use unstructured::{Document, Unstructured};
 
 use game2::registry::Registry;
+use crate::world::chunk::voxel::VoxelMaterialDescription;
 
 #[derive(Debug, Default)]
 pub struct MaterialsPlugin;
@@ -30,73 +32,34 @@ pub type MaterialRegistry = Registry<MaterialData, MaterialRegistryMarker>;
 
 #[derive(
     Debug,
-    Default,
     Clone,
     PartialEq,
     Eq,
     Ord,
     PartialOrd,
-    Hash,
-    serde::Serialize,
-    serde::Deserialize,
+    Hash
 )]
-pub struct MaterialData(Document);
-
-impl Deref for MaterialData {
-    type Target = Document;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for MaterialData {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl From<Document> for MaterialData {
-    fn from(doc: Document) -> Self {
-        Self(doc)
-    }
-}
-
-impl From<&Document> for MaterialData {
-    fn from(doc: &Document) -> Self {
-        Self(doc.clone())
-    }
+pub struct MaterialData{
+    metadata: Document,
+    voxel: Option<std::sync::Arc<dyn VoxelMaterialDescription>>
 }
 
 impl MaterialData {
     pub const RENDER_KEY: &'static str = "render";
-    pub const KEY_GEOMETRY: &'static str = format!("{}/geometry", Self::RENDER_KEY).as_str();
+    pub const KEY_GEOMETRY: &'static str = "render/geometry";
     pub const KEY_PHYSICS: &'static str = "physics";
 
     pub fn geometry(&self) -> Option<&Document> {
         self.select(Self::KEY_GEOMETRY).ok()
     }
     pub fn voxel_visibility(&self) -> Option<VoxelVisibility> {
-        self.select("voxel_visibility")
+        self.select(format!("{}/{}/voxel_visibility",Self::KEY_GEOMETRY, Self::RENDER_KEY).as_str())
+            .ok()
             .map(|doc| Self::parse_voxel_visibility(doc))
             .flatten()
-            .ok()
-    }
-    pub fn parse_voxel_visibility(data_unstructured: &Document) -> Option<VoxelVisibility> {
-        match data_unstructured {
-            Unstructured::String(data) => match data.to_lowercase().as_str() {
-                "transparent" | "translucent" | "t" => Some(VoxelVisibility::Translucent),
-                "solid" | "opaque" | "o" => Some(VoxelVisibility::Opaque),
-                "empty" | "air" | "e" => Some(VoxelVisibility::Empty),
-                _ => None,
-            },
-            _ => None,
-        }
     }
 
-    fn physics(&self) -> Option<&Document> {
-        self.select(Self::KEY_PHYSICS).ok()
-    }
+
 }
 
 #[cfg(test)]
