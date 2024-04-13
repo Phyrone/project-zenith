@@ -25,21 +25,39 @@ pub struct NoMarker;
 /// to allow multiple registries in one bevy world, create some marker type and set it at [M]
 /// default is [NoMarker]
 ///
-#[derive(Debug, Default, Clone, Resource)]
+#[derive(Debug, Clone, Resource)]
 pub struct Registry<T, M = NoMarker> {
     inner: Arc<RegistryInner<T>>,
     _marker: std::marker::PhantomData<M>,
 }
 
-#[derive(Debug, Default, Clone)]
+impl<T, M> Default for Registry<T, M> {
+    fn default() -> Self {
+        Self {
+            inner: Arc::new(RegistryInner::default()),
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct RegistryInner<T> {
     id_mapper: Slab<ResourceKey>,
     key_to_data: HashMap<ResourceKey, RegistryEntry<T>>,
 }
 
+impl<T> Default for RegistryInner<T> {
+    fn default() -> Self {
+        Self {
+            id_mapper: Slab::new(),
+            key_to_data: HashMap::new(),
+        }
+    }
+}
+
 impl<T, M> Registry<T, M>
-where
-    T: Default + Clone + Hash,
+    where
+        T: Default + Clone + Hash,
 {
     fn edit(&mut self) -> &mut RegistryInner<T> {
         Arc::make_mut(&mut self.inner)
@@ -134,6 +152,7 @@ impl<T> Deref for RegistryEntry<T> {
         &self.data
     }
 }
+
 impl<T> DerefMut for RegistryEntry<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data

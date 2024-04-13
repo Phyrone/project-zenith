@@ -15,12 +15,14 @@ impl Plugin for ChunkApplyStandardMaterialsPlugin {
     }
 }
 
+
 fn apply_standard_materials_system(
     mut commands: ParallelCommands,
     surfaces: Query<(Entity, &VoxelChunkSurface), (Changed<VoxelChunkSurface>)>,
 ) {
     surfaces.par_iter().for_each(|(entity, surface)| {
         let data = surface;
+        surface.material.category
         
     })
 }

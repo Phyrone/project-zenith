@@ -35,9 +35,20 @@ pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct VoxelMaterialDescription {
-    pub provider: TypeId,
+    pub category: TypeId,
     pub id: usize,
     pub metadata: Option<Box<Document>>,
+}
+
+pub struct NoMaterial;
+impl Default for VoxelMaterialDescription {
+    fn default() -> Self {
+        Self {
+            category: TypeId::of::<NoMaterial>(),
+            id: AIR_MATERIAL_ID,
+            metadata: None,
+        }
+    }
 }
 
 
@@ -93,7 +104,9 @@ impl block_mesh::MergeVoxel for Voxel {
     type MergeValue = Option<u64>;
 
     fn merge_value(&self) -> Self::MergeValue {
-        self.material.as_ref().map(|material| material.hash())
+        let mut hasher = AHasher::default();
+        self.material.as_ref().hash(&mut hasher);
+        Some(hasher.finish())
     }
 }
 
@@ -105,10 +118,17 @@ impl ChunkDataEntry {
         _resolution: usize,
         _index: usize,
     ) -> Voxel {
-        registry
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
-            ChunkDataEntry::Block(material, _) => Voxel::new(*material),
+            ChunkDataEntry::Block(material, _) => {
+                let entry = registry.get_by_id(*material)
+                    .map(|entry| entry.voxel.clone())
+                    .flatten();
+                match entry {
+                    Some(entry) => Voxel::new(entry),
+                    None => Voxel::empty(),
+                }
+            }
         }
     }
 }
@@ -118,10 +138,10 @@ pub fn create_voxel_chunk<'render>(
     data: &'render ChunkDataStorage,
     neighbors: &[Option<&ChunkDataStorage>; 6],
     resolution: usize,
-) -> Vec<Voxel<'render>> {
+) -> Vec<Voxel> {
     let voxel_chunk_size = resolution * CHUNK_SIZE + 2; //+2 for the faces
     let voxel_chunk_volume = voxel_chunk_size * voxel_chunk_size * voxel_chunk_size;
-    let mut voxels = vec![Voxel::empty(registry); voxel_chunk_volume];
+    let mut voxels = vec![Voxel::empty(); voxel_chunk_volume];
     voxels.par_iter_mut().enumerate().for_each(|(i, voxel)| {
         let (x, y, z) = (
             i % voxel_chunk_size,

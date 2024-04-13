@@ -4,18 +4,18 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use bevy::tasks::{AsyncComputeTaskPool, block_on, Task};
 use futures_lite::future;
 use rayon::prelude::*;
 
-use game2::{WithFixedSizeExt, CHUNK_SIZE};
+use game2::{CHUNK_SIZE, WithFixedSizeExt};
 
+use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::chunk::chunk_data::ClientChunkData;
 use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::voxel::{
-    create_voxel_chunk, voxels_grouped_greedy_mesh, GroupedVoxelMeshes,
+    create_voxel_chunk, GroupedVoxelMeshes, voxels_grouped_greedy_mesh,
 };
-use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::material::MaterialRegistry;
 
 //TODO cancel tasks when chunk is removed
@@ -41,7 +41,7 @@ impl Plugin for ChunkRenderMeshPlugin {
 #[component(storage = "SparseSet")]
 pub struct ChunkRenderErrand;
 
-#[derive(Debug, Default, Component, Clone)]
+#[derive(Debug, Component, Clone, Default)]
 pub struct VoxelChunkSurface {
     pub iden: TextureIden,
 }

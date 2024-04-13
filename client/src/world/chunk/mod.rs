@@ -3,7 +3,9 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use bevy::prelude::{App, Component, Plugin, SystemSet};
+
 use game2::Direction;
+
 use crate::world::chunk::voxel::VoxelMaterialDescription;
 use crate::world::texture::VoxelSurfaceTexture;
 
@@ -51,36 +53,9 @@ pub enum ChunkRenderStage {
     ApplyMaterials,
 }
 
-#[repr(u8)]
-enum TextureSplit {
-    Mono = 1,
-    TSB = 2,
-    All = 3,
-}
 
-pub struct VoxelTextureIden2(u32);
-
-impl VoxelTextureIden2 {
-    const SPLIT_OFFSET: u32 = 30;
-    pub fn new(texture: u32, split: TextureSplit) -> Self {
-        Self(texture | ((split as u32) << Self::SPLIT_OFFSET))
-    }
-
-    pub fn texture(&self) -> u32 {
-        self.0 & !(0b11 << Self::SPLIT_OFFSET)
-    }
-    pub fn split(&self) -> TextureSplit {
-        match (self.0 >> Self::SPLIT_OFFSET) & 0b11 {
-            1 => TextureSplit::Mono,
-            2 => TextureSplit::TSB,
-            3 => TextureSplit::All,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TextureIden {
-    pub material: Arc<dyn VoxelMaterialDescription>,
+    pub material: Arc<VoxelMaterialDescription>,
     pub direction: Direction,
 }

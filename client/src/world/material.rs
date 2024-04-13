@@ -8,10 +8,10 @@ use bevy::prelude::{Plugin, Resource};
 use block_mesh::VoxelVisibility;
 use futures_lite::StreamExt;
 use itertools::Itertools;
-use rclite::Arc;
-use unstructured::{Document, Unstructured};
+use unstructured::Document;
 
 use game2::registry::Registry;
+
 use crate::world::chunk::voxel::VoxelMaterialDescription;
 
 #[derive(Debug, Default)]
@@ -31,17 +31,17 @@ pub const AIR_MATERIAL_ID: usize = 0;
 pub type MaterialRegistry = Registry<MaterialData, MaterialRegistryMarker>;
 
 #[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    Hash
+Debug,
+Clone,
+PartialEq,
+Eq,
+Ord,
+PartialOrd,
+Hash
 )]
-pub struct MaterialData{
-    metadata: Document,
-    voxel: Option<std::sync::Arc<dyn VoxelMaterialDescription>>
+pub struct MaterialData {
+    pub metadata: Document,
+    pub voxel: Option<std::sync::Arc<VoxelMaterialDescription>>,
 }
 
 impl MaterialData {
@@ -53,13 +53,11 @@ impl MaterialData {
         self.select(Self::KEY_GEOMETRY).ok()
     }
     pub fn voxel_visibility(&self) -> Option<VoxelVisibility> {
-        self.select(format!("{}/{}/voxel_visibility",Self::KEY_GEOMETRY, Self::RENDER_KEY).as_str())
+        self.select(format!("{}/{}/voxel_visibility", Self::KEY_GEOMETRY, Self::RENDER_KEY).as_str())
             .ok()
             .map(|doc| Self::parse_voxel_visibility(doc))
             .flatten()
     }
-
-
 }
 
 #[cfg(test)]
