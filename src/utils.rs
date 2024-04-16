@@ -57,6 +57,23 @@ pub fn into_percent(value: f64) -> String {
     format!("{:.2}%", value * 100.0)
 }
 
+#[macro_use]
+pub mod error{
+    #[macro_export]
+    macro_rules! error_object {
+        ($name:ident,$msg:expr) => {
+            #[derive(Debug)]
+            pub struct $name;
+            impl std::fmt::Display for $name {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    write!(f, $msg)
+                }
+            }
+            impl std::error::Error for $name {}
+        };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

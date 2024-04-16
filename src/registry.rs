@@ -57,7 +57,7 @@ impl<T> Default for RegistryInner<T> {
 
 impl<T, M> Registry<T, M>
     where
-        T: Default + Clone + Hash,
+        T: Clone + Hash,
 {
     fn edit(&mut self) -> &mut RegistryInner<T> {
         Arc::make_mut(&mut self.inner)

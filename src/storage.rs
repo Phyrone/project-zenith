@@ -8,7 +8,7 @@ use itertools::Itertools;
 use packedvec::PackedVec;
 use rayon::prelude::*;
 
-use crate::lzw::{lzw_compress_raw, lzw_decompress};
+use crate::lzw::lzw_decompress;
 
 pub struct StorageCompressed;
 
@@ -21,8 +21,8 @@ pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Ha
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
         PackedVec::new(vec![0; SIZE])
@@ -45,8 +45,8 @@ where
 }
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn default() -> Self {
         Self::empty()
@@ -54,8 +54,8 @@ where
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-where
-    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+    where
+        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
     /// creates a storage from an array of items.
     /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
@@ -180,7 +180,14 @@ where
         });
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &'_ ITEM> + '_ {
+    fn create_gaps(
+        gap_ids: &[usize],
+        grid: &mut [usize],
+    ) {
+        grid.par_iter_mut().for_each(|block| {});
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item=&'_ ITEM> + '_ {
         self.data
             .iter()
             .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
@@ -211,7 +218,7 @@ where
             return Vec::new();
         }
 
-        let compressed = lzw_compress_raw(self.palette.len(), self.data.iter());
+        let compressed = lzw_decompress(self.palette.len(), self.data.iter());
         let bytes = compressed
             .par_iter()
             .map(|x| x.to_be_bytes())
@@ -225,6 +232,7 @@ where
             .write_all(&bytes)
             .expect("writing data to the vec should not fail");
         drop(writer);
+        output.shrink_to_fit();
         output
     }
     pub fn import_from_compressed_data(palette: Vec<ITEM>, data: &[u8]) -> Self {
@@ -237,6 +245,10 @@ where
                 palette,
                 data: PackedVec::new(data),
             };
+        }
+        if data.len() < 256 {
+            //TODO response with error instead of panic
+            panic!("data must be at least 256 bytes long");
         }
 
         let tree = huffman_coding::HuffmanTree::from_table(&data[0..256]);
@@ -257,6 +269,7 @@ where
             SIZE,
             "data must have the same length as the limit"
         );
+        //TODO validate data -> palette pointers
         Self {
             palette,
             data: PackedVec::new(decompressed),

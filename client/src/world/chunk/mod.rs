@@ -53,8 +53,7 @@ pub enum ChunkRenderStage {
     ApplyMaterials,
 }
 
-
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Hash, Eq, PartialEq)]
 pub struct TextureIden {
     pub material: Arc<VoxelMaterialDescription>,
     pub direction: Direction,

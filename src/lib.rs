@@ -147,7 +147,6 @@ impl Direction {
             Direction::North => Direction::South,
         }
     }
-
     pub fn from_index(index: u32) -> Direction {
         match index {
             DIRECTION_UP => Direction::Up,
@@ -208,7 +207,6 @@ impl Direction {
         //result (cords back to index)
         x + y * dimension_size + z * dimension_size * dimension_size
     }
-
     #[inline]
     pub fn outer_perspective_faced_index(&self, size: usize, index: usize) -> usize {
         self.opposite().inner_perspective_faced_index(size, index)

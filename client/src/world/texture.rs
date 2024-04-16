@@ -1,14 +1,13 @@
 use std::any::Any;
 
-use crunch::{Item, pack, PackedItem, Rect, Rotation};
-use image::{DynamicImage, GenericImage};
+use crunch::{pack, Item, PackedItem, Rect, Rotation};
 use image::imageops::FilterType;
+use image::{DynamicImage, GenericImage};
 use rayon::prelude::*;
 
 pub trait VoxelSurfaceTexture: Any {}
 
 pub struct BlockTextures {}
-
 
 impl BlockTextures {
     pub fn new() -> Self {

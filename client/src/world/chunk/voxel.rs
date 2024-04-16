@@ -14,11 +14,10 @@ use block_mesh::{
     UnorientedQuad, VoxelVisibility,
 };
 use block_mesh::ndshape::RuntimeShape;
-use block_mesh::VoxelVisibility::Translucent;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rayon::prelude::*;
-use unstructured::Document;
+use unstructured::{Document, Unstructured};
 
 use game2::{CHUNK_SIZE, Direction};
 use game2::bundle::Bundle;
@@ -40,7 +39,29 @@ pub struct VoxelMaterialDescription {
     pub metadata: Option<Box<Document>>,
 }
 
+impl VoxelMaterialDescription {
+    fn voxel_visibility(&self) -> VoxelVisibility {
+        self.metadata.as_ref().and_then(|metadata| {
+            metadata.select("visibility")
+                .ok()
+                .and_then(|value| {
+                    if let Unstructured::String(value) = value {
+                        match value.as_str() {
+                            "empty" => Some(VoxelVisibility::Empty),
+                            "translucent" => Some(VoxelVisibility::Translucent),
+                            _ => None,
+                        }
+                    } else {
+                        None
+                    }
+                })
+        }).unwrap_or(VoxelVisibility::Opaque)
+    }
+}
+
+
 pub struct NoMaterial;
+
 impl Default for VoxelMaterialDescription {
     fn default() -> Self {
         Self {
@@ -50,7 +71,6 @@ impl Default for VoxelMaterialDescription {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Eq)]
 pub struct Voxel {
@@ -81,12 +101,12 @@ impl PartialEq<Self> for Voxel {
 
 impl Voxel {
     pub fn empty() -> Self {
-        Self {
-            material: None,
-        }
+        Self { material: None }
     }
     pub fn new(material_data: Arc<VoxelMaterialDescription>) -> Self {
-        Self { material: Some(material_data) }
+        Self {
+            material: Some(material_data),
+        }
     }
 }
 
@@ -121,7 +141,8 @@ impl ChunkDataEntry {
         match self {
             ChunkDataEntry::Empty => Voxel::empty(),
             ChunkDataEntry::Block(material, _) => {
-                let entry = registry.get_by_id(*material)
+                let entry = registry
+                    .get_by_id(*material)
                     .map(|entry| entry.voxel.clone())
                     .flatten();
                 match entry {
@@ -369,14 +390,13 @@ pub fn construct_grouped_mesh(
             quads.into_par_iter().map(|quad| {
                 let pos = quad.minimum;
                 let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
-                let voxel = &voxel_chunk[pos as usize];
+                let material = voxel_chunk[pos as usize].material.clone()
+                    .expect("voxel material is not set");
+                let direction = direction.clone();
                 (
-                    TextureIden {
-                        material: voxel.material,
-                        direction,
-                    },
+                    TextureIden { material, direction },
                     quad,
-                    face.clone(),
+                    face,
                 )
             })
         })
