@@ -21,7 +21,7 @@ bitvec = { version = "1.0.1", features = ["serde"] }
 bevy_rapier3d = { version = "0.25.0", features = ["wasm-bindgen", "serde", "parallel", "debug-render"] }
 serde-big-array = "0.5.1"
 slab = { version = "0.4.9", features = ["serde"] }
-serde_json = "1.0.108"
+serde_json = "1.0.116"
 crunch = "0.5.3"
 wtransport = "0.1.10"
 array-init = "2.1.0"
