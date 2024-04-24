@@ -1,6 +1,6 @@
 [package]
 name = "client"
-version = "0.0.1-INDEV"
+version = "0.0.1713974630-INDEV"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
