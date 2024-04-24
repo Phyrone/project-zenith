@@ -181,10 +181,10 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
     }
 
     fn create_gaps(
-        gap_ids: &[usize],
+        _gap_ids: &[usize],
         grid: &mut [usize],
     ) {
-        grid.par_iter_mut().for_each(|block| {});
+        grid.par_iter_mut().for_each(|_block| {});
     }
 
     pub fn iter(&self) -> impl Iterator<Item=&'_ ITEM> + '_ {
