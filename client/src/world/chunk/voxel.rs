@@ -10,24 +10,24 @@ use bevy::prelude::{Has, Mesh};
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::utils::label::DynHash;
-use block_mesh::{
-    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, UnitQuadBuffer,
-    UnorientedQuad, VoxelVisibility,
-};
 use block_mesh::ndshape::RuntimeShape;
+use block_mesh::{
+    GreedyQuadsBuffer, OrientedBlockFace, QuadCoordinateConfig, UnitQuadBuffer, UnorientedQuad,
+    VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
+};
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rayon::prelude::*;
 use unstructured::{Document, Unstructured};
 
-use game2::{CHUNK_SIZE, Direction};
 use game2::bundle::Bundle;
 use game2::mono_bundle::MonoBundle;
 use game2::registry::RegistryEntry;
+use game2::{Direction, CHUNK_SIZE};
 
 use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage, ClientChunkData};
 use crate::world::chunk::TextureIden;
-use crate::world::material::{AIR_MATERIAL_ID, MaterialRegistry};
+use crate::world::material::{MaterialRegistry, AIR_MATERIAL_ID};
 
 const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
@@ -42,10 +42,10 @@ pub struct VoxelMaterialDescription {
 
 impl VoxelMaterialDescription {
     fn voxel_visibility(&self) -> VoxelVisibility {
-        self.metadata.as_ref().and_then(|metadata| {
-            metadata.select("visibility")
-                .ok()
-                .and_then(|value| {
+        self.metadata
+            .as_ref()
+            .and_then(|metadata| {
+                metadata.select("visibility").ok().and_then(|value| {
                     if let Unstructured::String(value) = value {
                         match value.as_str() {
                             "empty" => Some(VoxelVisibility::Empty),
@@ -56,10 +56,10 @@ impl VoxelMaterialDescription {
                         None
                     }
                 })
-        }).unwrap_or(VoxelVisibility::Opaque)
+            })
+            .unwrap_or(VoxelVisibility::Opaque)
     }
 }
-
 
 pub struct NoMaterial;
 
@@ -382,14 +382,29 @@ pub fn construct_grouped_mesh(
     resolution: usize,
     size: usize,
 ) -> GroupedVoxelMeshes {
-    let quads = buffer.quads.groups.par_iter()
+    let quads = buffer
+        .quads
+        .groups
+        .par_iter()
         .zip(COORDS_CONFIG.faces.par_iter())
         .flat_map(|(quads, face)| {
             let direction = direction_from_oriented_block_face(face);
             quads.into_par_iter().map(move |quad| {
-                let pos = quad.minimum[0] + quad.minimum[1] * size as u32 + quad.minimum[2] * size as u32 * size as u32;
-                let material = voxel_chunk[pos as usize].material.clone().expect("voxel material is not set");
-                (TextureIden { material, direction: direction.clone() }, quad, face)
+                let pos = quad.minimum[0]
+                    + quad.minimum[1] * size as u32
+                    + quad.minimum[2] * size as u32 * size as u32;
+                let material = voxel_chunk[pos as usize]
+                    .material
+                    .clone()
+                    .expect("voxel material is not set");
+                (
+                    TextureIden {
+                        material,
+                        direction: direction.clone(),
+                    },
+                    quad,
+                    face,
+                )
             })
         })
         .collect::<Vec<_>>();

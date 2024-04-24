@@ -58,7 +58,7 @@ pub fn into_percent(value: f64) -> String {
 }
 
 #[macro_use]
-pub mod error{
+pub mod error {
     #[macro_export]
     macro_rules! error_object {
         ($name:ident,$msg:expr) => {

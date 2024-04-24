@@ -1,4 +1,3 @@
-
 use unstructured::Document;
 
 //TODO document
@@ -74,7 +73,7 @@ mod test {
             namespace: "core".to_string(),
             path: "dirt".to_string(),
         };
-        
+
         let hex = "92a4636f7265a464697274";
         let bytes = hex::decode(hex).unwrap();
         let data_1 = rmp_serde::from_slice::<ResourceKey>(&bytes).unwrap();
@@ -84,7 +83,7 @@ mod test {
         let data_2 = rmp_serde::from_slice::<ResourceKey>(&bytes).unwrap();
         println!("ver2: {:#?}", data_2);
         assert_eq!(data_1, data_2);
-        
+
         assert_eq!(data_1, expected);
         assert_eq!(data_2, expected);
     }

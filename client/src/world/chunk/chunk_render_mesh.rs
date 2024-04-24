@@ -4,18 +4,18 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::tasks::{AsyncComputeTaskPool, block_on, Task};
+use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
 use futures_lite::future;
 use rayon::prelude::*;
 
-use game2::{CHUNK_SIZE, WithFixedSizeExt};
+use game2::{WithFixedSizeExt, CHUNK_SIZE};
 
-use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::chunk::chunk_data::ClientChunkData;
 use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::voxel::{
-    create_voxel_chunk, GroupedVoxelMeshes, voxels_grouped_greedy_mesh,
+    create_voxel_chunk, voxels_grouped_greedy_mesh, GroupedVoxelMeshes,
 };
+use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::material::MaterialRegistry;
 
 //TODO cancel tasks when chunk is removed
@@ -76,7 +76,8 @@ fn create_build_mesh_tasks(
     commands: ParallelCommands,
     chunk_grid: Res<ChunkGrid>,
     material_registry: Res<MaterialRegistry>,
-    chunks: Query<(Entity, &ClientChunkData, &VoxelWorldFixedChunkPosition),
+    chunks: Query<
+        (Entity, &ClientChunkData, &VoxelWorldFixedChunkPosition),
         (With<ChunkRenderErrand>),
     >,
 ) {
@@ -94,8 +95,7 @@ fn create_build_mesh_tasks(
         let registry = material_registry.clone();
 
         let greedy_mesh_task = pool.spawn(async move {
-            
-            //rust borrow checker is a pain 
+            //rust borrow checker is a pain
             //TODO optimize this and above (maybe unecessary and the compiler will optimize it away for me)
             let mapped = neighbors
                 .iter()

@@ -21,8 +21,8 @@ pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Ha
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn empty_grid() -> PackedVec<usize> {
         PackedVec::new(vec![0; SIZE])
@@ -45,8 +45,8 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
 }
 
 impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Default + Send + Sync,
 {
     fn default() -> Self {
         Self::empty()
@@ -54,8 +54,8 @@ impl<const SIZE: usize, ITEM> Default for Storage<SIZE, ITEM>
 }
 
 impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
-    where
-        ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
+where
+    ITEM: Debug + Clone + Ord + Eq + Hash + Send + Sync,
 {
     /// creates a storage from an array of items.
     /// the items will be cloned, sorted (using ord) and then deduplicated (using eq).
@@ -180,14 +180,11 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
         });
     }
 
-    fn create_gaps(
-        _gap_ids: &[usize],
-        grid: &mut [usize],
-    ) {
+    fn create_gaps(_gap_ids: &[usize], grid: &mut [usize]) {
         grid.par_iter_mut().for_each(|_block| {});
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&'_ ITEM> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &'_ ITEM> + '_ {
         self.data
             .iter()
             .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })

@@ -5,8 +5,8 @@ pub fn lzw_compress_raw<I>(
     dictionary_size: usize,
     data: I,
 ) -> Vec<usize>
-    where
-        I: Iterator<Item=usize>,
+where
+    I: Iterator<Item = usize>,
 {
     let mut dictionary = Vec::with_capacity(dictionary_size);
     for i in 0..dictionary_size {
@@ -66,9 +66,13 @@ pub fn packed_lzw_compress(
     }
 }
 
-pub fn lzw_decompress<I>(dictionary_size: usize, mut compressed: I, limit: Option<usize>) -> Vec<usize>
-    where
-        I: Iterator<Item=usize>,
+pub fn lzw_decompress<I>(
+    dictionary_size: usize,
+    mut compressed: I,
+    limit: Option<usize>,
+) -> Vec<usize>
+where
+    I: Iterator<Item = usize>,
 {
     let first = compressed.next();
     let first = match first {
