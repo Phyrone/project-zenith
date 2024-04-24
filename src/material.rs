@@ -14,9 +14,6 @@ use unstructured::Document;
     serde::Serialize,
     serde::Deserialize,
     deepsize::DeepSizeOf,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
 )]
 pub struct ResourceKey {
     #[serde(rename = "n")]
@@ -49,19 +46,6 @@ mod test {
     use super::*;
 
     #[test]
-    pub fn test_rkyv() {
-        let id = ResourceKey {
-            namespace: ResourceKey::NAMESPACE_CORE.to_string(),
-            path: "dirt".to_string(),
-        };
-
-        let bytes = rkyv::to_bytes::<_, 100_usize>(&id).unwrap();
-        let hex = hex::encode(&bytes);
-
-        println!("{}", hex);
-    }
-
-    #[test]
     pub fn test_msgpack() {
         let id = BlockData {
             material: ResourceKey {
@@ -86,14 +70,23 @@ mod test {
 
     #[test]
     pub fn test_de() {
+        let expected = ResourceKey {
+            namespace: "core".to_string(),
+            path: "dirt".to_string(),
+        };
+        
         let hex = "92a4636f7265a464697274";
         let bytes = hex::decode(hex).unwrap();
-        let data = rmp_serde::from_slice::<ResourceKey>(&bytes).unwrap();
-        println!("ver1: {:#?}", data);
+        let data_1 = rmp_serde::from_slice::<ResourceKey>(&bytes).unwrap();
+        println!("ver1: {:#?}", data_1);
         let hex = "82a16ea4636f7265a170a464697274";
         let bytes = hex::decode(hex).unwrap();
-        let data = rmp_serde::from_slice::<ResourceKey>(&bytes).unwrap();
-        println!("ver2: {:#?}", data);
+        let data_2 = rmp_serde::from_slice::<ResourceKey>(&bytes).unwrap();
+        println!("ver2: {:#?}", data_2);
+        assert_eq!(data_1, data_2);
+        
+        assert_eq!(data_1, expected);
+        assert_eq!(data_2, expected);
     }
 
     #[test]

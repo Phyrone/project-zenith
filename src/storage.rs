@@ -218,7 +218,7 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
             return Vec::new();
         }
 
-        let compressed = lzw_decompress(self.palette.len(), self.data.iter());
+        let compressed = lzw_decompress(self.palette.len(), self.data.iter(), None);
         let bytes = compressed
             .par_iter()
             .map(|x| x.to_be_bytes())
@@ -263,13 +263,17 @@ impl<const SIZE: usize, ITEM> Storage<SIZE, ITEM>
             .chunks_exact(4)
             .map(|x| usize::from_be_bytes(x.try_into().unwrap()))
             .collect::<Vec<_>>();
-        let decompressed = lzw_decompress(palette.len(), data.into_iter());
+        let decompressed = lzw_decompress(palette.len(), data.into_iter(), Some(SIZE));
         assert_eq!(
             decompressed.len(),
             SIZE,
             "data must have the same length as the limit"
         );
-        //TODO validate data -> palette pointers
+        //TODO return error instead of panic
+        if decompressed.par_iter().all(|x| *x < palette.len()) {
+            panic!("data must only contain valid palette pointers");
+        }
+
         Self {
             palette,
             data: PackedVec::new(decompressed),

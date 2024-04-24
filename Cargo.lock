@@ -3416,7 +3416,6 @@ dependencies = [
  "rand 0.9.0-alpha.1",
  "rayon",
  "rclite",
- "rkyv",
  "rmp",
  "rmp-serde",
  "rust-lzma",

@@ -31,7 +31,6 @@ rand = "0.9.0-alpha.0"
 serde_json = { version = "1.0.114", features = ["alloc", "indexmap"] }
 hex = "0.4.3"
 huffman-coding = "0.1.2"
-rkyv = { version = "0.7.44", features = ["hashbrown", "uuid", "validation", "archive_be"] }
 rclite = "0.2.4"
 rmp-serde = "1.1.2"
 error-stack = { version = "0.4.1", features = ["serde", "anyhow"] }

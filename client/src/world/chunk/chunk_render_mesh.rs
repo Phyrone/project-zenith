@@ -4,18 +4,18 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use bevy::tasks::{AsyncComputeTaskPool, block_on, Task};
 use futures_lite::future;
 use rayon::prelude::*;
 
-use game2::{WithFixedSizeExt, CHUNK_SIZE};
+use game2::{CHUNK_SIZE, WithFixedSizeExt};
 
+use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::chunk::chunk_data::ClientChunkData;
 use crate::world::chunk::grid::ChunkGrid;
 use crate::world::chunk::voxel::{
-    create_voxel_chunk, voxels_grouped_greedy_mesh, GroupedVoxelMeshes,
+    create_voxel_chunk, GroupedVoxelMeshes, voxels_grouped_greedy_mesh,
 };
-use crate::world::chunk::{ChunkRenderStage, TextureIden, VoxelWorldFixedChunkPosition};
 use crate::world::material::MaterialRegistry;
 
 //TODO cancel tasks when chunk is removed
@@ -76,26 +76,40 @@ fn create_build_mesh_tasks(
     commands: ParallelCommands,
     chunk_grid: Res<ChunkGrid>,
     material_registry: Res<MaterialRegistry>,
-    chunks: Query<
-        (Entity, &ClientChunkData, &VoxelWorldFixedChunkPosition),
+    chunks: Query<(Entity, &ClientChunkData, &VoxelWorldFixedChunkPosition),
         (With<ChunkRenderErrand>),
     >,
 ) {
     let pool = AsyncComputeTaskPool::get();
     chunks.par_iter().for_each(|(entity, data, pos)| {
-        let neighbors = chunk_grid
+        let neighbors: [Option<ClientChunkData>; 6] = chunk_grid
             .neighbours(pos.x, pos.y, pos.z)
             .iter()
-            .map(|entity| match entity {
-                None => None,
-                Some(entity) => chunks.get(*entity).ok(),
-            })
-            .map(|chunk| chunk.map(|(_, data, _)| data.deref()))
+            .map(|entity| entity.and_then(|e| chunks.get(e).ok()))
+            .map(|chunk| chunk.map(|(_, data, _)| data.clone()))
             .collect::<Vec<_>>()
             .into_fixed_size::<6>();
+
+        let data = data.clone();
         let registry = material_registry.clone();
+
         let greedy_mesh_task = pool.spawn(async move {
-            let voxels = create_voxel_chunk(&registry, data.deref(), &neighbors, 1);
+            
+            //rust borrow checker is a pain 
+            //TODO optimize this and above (maybe unecessary and the compiler will optimize it away for me)
+            let mapped = neighbors
+                .iter()
+                .map(|data| {
+                    if let Some(data) = data {
+                        Some(data.deref())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+                .into_fixed_size::<6>();
+
+            let voxels = create_voxel_chunk(&registry, data.deref(), &mapped, 1);
             //TODO meshes might be needed in main world later for physics
             //voxels_grouped_mesh(&voxels, resolution, RenderAssetUsages::RENDER_WORLD)
             //TODO replace with greedy meshing (once i made tiling textures work + shader for it)

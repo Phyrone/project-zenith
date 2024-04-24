@@ -1,6 +1,7 @@
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use std::ops::Deref;
 use std::sync::Arc;
 
 use ahash::AHasher;
@@ -24,7 +25,7 @@ use game2::bundle::Bundle;
 use game2::mono_bundle::MonoBundle;
 use game2::registry::RegistryEntry;
 
-use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
+use crate::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage, ClientChunkData};
 use crate::world::chunk::TextureIden;
 use crate::world::material::{AIR_MATERIAL_ID, MaterialRegistry};
 
@@ -157,12 +158,13 @@ impl ChunkDataEntry {
 pub fn create_voxel_chunk<'render>(
     registry: &'render MaterialRegistry,
     data: &'render ChunkDataStorage,
-    neighbors: &[Option<&ChunkDataStorage>; 6],
+    neighbors: &'render [Option<&ChunkDataStorage>; 6],
     resolution: usize,
 ) -> Vec<Voxel> {
     let voxel_chunk_size = resolution * CHUNK_SIZE + 2; //+2 for the faces
     let voxel_chunk_volume = voxel_chunk_size * voxel_chunk_size * voxel_chunk_size;
     let mut voxels = vec![Voxel::empty(); voxel_chunk_volume];
+
     voxels.par_iter_mut().enumerate().for_each(|(i, voxel)| {
         let (x, y, z) = (
             i % voxel_chunk_size,
@@ -226,14 +228,14 @@ fn get_voxel_inner(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn get_voxel_face(
+fn get_voxel_face<'render>(
     x: usize,
     y: usize,
     z: usize,
     resolution: usize,
     voxel_chunk_size: usize,
-    registry: &MaterialRegistry,
-    neighbours: &[Option<&ChunkDataStorage>; 6],
+    registry: &'render MaterialRegistry,
+    neighbours: &'render [Option<&'render ChunkDataStorage>; 6],
     into: &mut Voxel,
 ) {
     //0 = east
@@ -380,27 +382,16 @@ pub fn construct_grouped_mesh(
     resolution: usize,
     size: usize,
 ) -> GroupedVoxelMeshes {
-    let quads = buffer
-        .quads
-        .groups
-        .par_iter()
+    let quads = buffer.quads.groups.par_iter()
         .zip(COORDS_CONFIG.faces.par_iter())
-        .map(|(quads, face)| {
+        .flat_map(|(quads, face)| {
             let direction = direction_from_oriented_block_face(face);
-            quads.into_par_iter().map(|quad| {
-                let pos = quad.minimum;
-                let pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
-                let material = voxel_chunk[pos as usize].material.clone()
-                    .expect("voxel material is not set");
-                let direction = direction.clone();
-                (
-                    TextureIden { material, direction },
-                    quad,
-                    face,
-                )
+            quads.into_par_iter().map(move |quad| {
+                let pos = quad.minimum[0] + quad.minimum[1] * size as u32 + quad.minimum[2] * size as u32 * size as u32;
+                let material = voxel_chunk[pos as usize].material.clone().expect("voxel material is not set");
+                (TextureIden { material, direction: direction.clone() }, quad, face)
             })
         })
-        .flatten()
         .collect::<Vec<_>>();
 
     //create meshes grouped by material

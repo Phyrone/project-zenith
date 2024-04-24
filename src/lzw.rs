@@ -5,8 +5,8 @@ pub fn lzw_compress_raw<I>(
     dictionary_size: usize,
     data: I,
 ) -> Vec<usize>
-where
-    I: Iterator<Item = usize>,
+    where
+        I: Iterator<Item=usize>,
 {
     let mut dictionary = Vec::with_capacity(dictionary_size);
     for i in 0..dictionary_size {
@@ -66,9 +66,9 @@ pub fn packed_lzw_compress(
     }
 }
 
-pub fn lzw_decompress<I>(dictionary_size: usize, mut compressed: I) -> Vec<usize>
-where
-    I: Iterator<Item = usize>,
+pub fn lzw_decompress<I>(dictionary_size: usize, mut compressed: I, limit: Option<usize>) -> Vec<usize>
+    where
+        I: Iterator<Item=usize>,
 {
     let first = compressed.next();
     let first = match first {
@@ -99,6 +99,17 @@ where
                 new_entry
             }
         };
+        //check limit to prevent getting "zip-bombed"
+        if let Some(limit) = limit {
+            if output.len() + next.len() > limit {
+                let amount = limit - output.len();
+                if amount > 0 {
+                    output.extend_from_slice(&next[0..amount]);
+                }
+                //TODO return error instead of cutting off
+                break;
+            }
+        }
         output.extend_from_slice(&next);
         last_entry = next;
     }
@@ -106,4 +117,59 @@ where
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use super::*;
+
+    #[test]
+    fn lzw_compress_raw_compression_works() {
+        //create a vector with 10 elements all 0 which should be easy to compress
+        let data = vec![0; 10];
+        let compressed = lzw_compress_raw(10, data.into_iter());
+        assert!(compressed.len() < 10);
+    }
+
+    #[test]
+    fn lzw_compress_raw_compression_with_empty_data() {
+        let data: Vec<usize> = Vec::new();
+        let compressed = lzw_compress_raw(10, data.into_iter());
+        assert_eq!(compressed.len(), 0);
+    }
+
+    #[test]
+    fn packed_lzw_compress_compression_works() {
+        let data = PackedVec::new(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        let compressed = packed_lzw_compress(10, &data);
+        //since compression does not help here, we should get the original data back
+        assert_eq!(data, compressed);
+    }
+
+    #[test]
+    fn packed_lzw_compress_compression_with_empty_data() {
+        let data = PackedVec::new(Vec::new());
+        let compressed = packed_lzw_compress(10, &data);
+        assert_eq!(compressed.len(), 0);
+    }
+
+    #[test]
+    fn lzw_decompress_decompression_works() {
+        let data = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let compressed = lzw_compress_raw(10, data.clone().into_iter());
+        let decompressed = lzw_decompress(10, compressed.into_iter(), None);
+        assert_eq!(data, decompressed);
+    }
+
+    #[test]
+    fn lzw_decompress_decompression_with_empty_data() {
+        let compressed: Vec<usize> = Vec::new();
+        let decompressed = lzw_decompress(10, compressed.into_iter(), None);
+        assert_eq!(decompressed.len(), 0);
+    }
+
+    #[test]
+    fn lzw_decompress_decompression_with_limit() {
+        let data = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let compressed = lzw_compress_raw(10, data.clone().into_iter());
+        let decompressed = lzw_decompress(10, compressed.into_iter(), Some(5));
+        assert_eq!(decompressed.len(), 5);
+    }
+}
