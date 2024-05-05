@@ -810,9 +810,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_atmosphere"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4cc7c8b7c8502d6e735944c177938a67a7fb0c8e069ab5f04a01bd1beb499b5"
+checksum = "c48ce3e0b86b7034809827d7e6e723f09478f58c1c96024cd91bafbd9ebe247c"
 dependencies = [
  "bevy",
  "bevy_atmosphere_macros",
@@ -1537,7 +1537,7 @@ dependencies = [
  "bitflags 2.5.0",
  "cexpr",
  "clang-sys",
- "itertools 0.12.1",
+ "itertools 0.10.5",
  "lazy_static",
  "lazycell",
  "proc-macro2",
@@ -2736,7 +2736,7 @@ checksum = "1c8dc01fe0c49caf5c784c50958db2d73eb03be62d2d95e3ec83541b64841d8c"
 dependencies = [
  "anyhow",
  "bit-set",
- "bit-vec 0.6.3",
+ "bit-vec 0.4.4",
  "bytes",
  "cooked-waker",
  "deno_core_icudata",
@@ -5359,7 +5359,7 @@ version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "681030a937600a36906c185595136d26abfebb4aa9c65701cefcaf8578bb982b"
 dependencies = [
- "proc-macro-crate 3.1.0",
+ "proc-macro-crate 1.3.1",
  "proc-macro2",
  "quote",
  "syn 2.0.58",
