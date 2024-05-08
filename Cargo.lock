@@ -1447,7 +1447,7 @@ dependencies = [
  "ahash 0.8.11",
  "bevy_utils_proc_macros",
  "getrandom 0.2.12",
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
  "nonmax",
  "petgraph",
  "smallvec",
@@ -2085,7 +2085,7 @@ dependencies = [
  "futures-lite",
  "futures-polling",
  "game2",
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
  "http",
  "image",
  "itertools 0.12.1",
@@ -3533,7 +3533,7 @@ dependencies = [
  "deepsize",
  "enumset",
  "error-stack",
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
  "hex",
  "huffman-coding",
  "itertools 0.12.1",
@@ -3988,7 +3988,7 @@ checksum = "cc11df1ace8e7e564511f53af41f3e42ddc95b56fd07b3f4445d2a6048bc682c"
 dependencies = [
  "bitflags 2.5.0",
  "gpu-descriptor-types",
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
 ]
 
 [[package]]
@@ -4118,9 +4118,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.14.3"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
+checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash 0.8.11",
  "allocator-api2",
@@ -4359,7 +4359,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "168fb715dda47215e360912c096649d23d58bf392ac62f73919e831745e40f26"
 dependencies = [
  "equivalent",
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
 ]
 
 [[package]]
@@ -7272,7 +7272,7 @@ dependencies = [
  "bincode",
  "deno_core",
  "game2",
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
  "lz4_flex",
  "moka",
  "opensimplex2",
@@ -7542,7 +7542,7 @@ version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61addf9117b11d1f5b4bf6fe94242ba25f59d2d4b2080544b771bd647024fd00"
 dependencies = [
- "hashbrown 0.14.3",
+ "hashbrown 0.14.5",
  "num-traits",
  "robust",
  "smallvec",
