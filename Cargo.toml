@@ -13,7 +13,7 @@ itertools = "0.12.0"
 lz4_flex = "0.11.1"
 packedvec = { version = "1.2.4", features = ["serde"] }
 rayon = "1.8.0"
-serde = { version = "1.0.194", features = ["derive", "rc", "alloc"] }
+serde = { version = "1.0.200", features = ["derive", "rc", "alloc"] }
 slab = { version = "0.4.9", features = ["serde"] }
 smallvec = { version = "1.11.2", features = ["serde", "union", "const_new", "write"] }
 snap = "1.1.1"
@@ -41,7 +41,7 @@ quoted-string = "0.6.1"
 [build-dependencies]
 error-stack = "0.4.1"
 prost-build = "0.12.3"
-serde = { version = "1.0.194", features = ["derive", "alloc", "rc"] }
+serde = { version = "1.0.200", features = ["derive", "alloc", "rc"] }
 serde_json = { version = "1.0.114", features = ["alloc"] }
 walkdir = "2.4.0"
 
