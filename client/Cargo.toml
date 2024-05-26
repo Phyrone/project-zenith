@@ -11,7 +11,7 @@ clap = { version = "4.4.12", features = ["cargo", "derive", "env", "string", "un
 error-stack = "0.4.1"
 fast_log = { version = "1.6.10", features = ["zip"] }
 log = { version = "0.4.20", features = ["serde"] }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.200", features = ["derive"] }
 bimap = { version = "0.6.3", features = ["serde"] }
 game2 = { path = ".." }
 server = { path = "../server" }
