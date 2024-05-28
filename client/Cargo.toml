@@ -45,6 +45,11 @@ itertools = "0.12.1"
 hashbrown = "0.14.3"
 #rkyv = "0.7.44"
 ahash = "0.8.11"
+palette = { version = "0.7.6", features = ["serde", "random"] }
+dominant_color = "0.4.0"
+uuid = { version = "1.8.0", features = ["v4", "serde", "rng"] }
+bitflags = { version = "2.5.0", features = ["serde", "std"] }
+quinn = { version = "0.11.0", features = ["ring", "rustls"] }
 
 
 

@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use client::world::chunk::chunk_data::{ChunkDataEntry, ChunkDataStorage};
 use game2::compressible::Compressible;
 use game2::humanize::humanize_memory;
-use game2::material::{Block, WoodData};
+use game2::resource::{Block, WoodData};
 use game2::CHUNK_VOLUME;
 
 #[inline]

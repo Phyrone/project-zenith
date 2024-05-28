@@ -9,6 +9,7 @@ use futures_lite::StreamExt;
 use itertools::Itertools;
 use unstructured::Document;
 
+use game2::bundle::Bundle;
 use game2::registry::Registry;
 
 use crate::world::chunk::voxel::VoxelMaterialDescription;
@@ -27,15 +28,16 @@ pub struct MaterialRegistryMarker;
 
 pub const AIR_MATERIAL_ID: usize = 0;
 
-pub type MaterialRegistry = Registry<MaterialData, MaterialRegistryMarker>;
+pub type MaterialRegistry = Registry<MaterialData, Bundle>;
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
+pub struct Translucent;
 
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct MaterialData {
     pub metadata: Document,
     pub voxel: Option<std::sync::Arc<VoxelMaterialDescription>>,
 }
-
-impl MaterialData {}
 
 #[cfg(test)]
 pub mod test {}

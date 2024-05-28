@@ -1,4 +1,8 @@
+use std::any::Any;
+
 use unstructured::Document;
+
+pub const NAMESPACE_CORE: &str = "core";
 
 //TODO document
 /// A resource key represents an identifier for a resource in its scope.
@@ -18,22 +22,32 @@ pub struct ResourceKey {
     #[serde(rename = "n")]
     pub namespace: String,
     #[serde(rename = "p")]
-    pub path: String,
+    pub name: String,
 }
 
 impl ResourceKey {
-    const NAMESPACE_CORE: &'static str = "core";
+    fn new(namespace: &str, name: &str) -> Self {
+        Self {
+            namespace: namespace.to_string(),
+            name: name.to_string(),
+        }
+    }
 }
 
 #[derive(
     Debug, Eq, PartialEq, Clone, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize,
 )]
 pub struct BlockData {
-    #[serde(rename = "m")]
+    #[serde(rename = "m", alias = "material")]
     pub material: ResourceKey,
-    #[serde(rename = "d")]
+    #[serde(rename = "d", alias = "data")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Box<Document>>,
+}
+
+pub trait Resource: Any {
+    fn key(&self) -> ResourceKey;
+    fn get_data(&self) -> Option<Document>;
 }
 
 #[cfg(test)]
@@ -48,8 +62,8 @@ mod test {
     pub fn test_msgpack() {
         let id = BlockData {
             material: ResourceKey {
-                namespace: ResourceKey::NAMESPACE_CORE.to_string(),
-                path: "dirt".to_string(),
+                namespace: NAMESPACE_CORE.to_string(),
+                name: "dirt".to_string(),
             },
             data: None,
         };
@@ -71,7 +85,7 @@ mod test {
     pub fn test_de() {
         let expected = ResourceKey {
             namespace: "core".to_string(),
-            path: "dirt".to_string(),
+            name: "dirt".to_string(),
         };
 
         let hex = "92a4636f7265a464697274";
@@ -98,5 +112,11 @@ mod test {
             "BlockData: {}",
             humanize_memory(std::mem::size_of::<BlockData>())
         );
+    }
+    
+    #[test]
+    pub fn test_kv(){
+
+        
     }
 }

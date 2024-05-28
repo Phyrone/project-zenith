@@ -1,6 +1,6 @@
 use client::world::chunk::voxel::{create_voxel_block, Voxel, VoxelChunk};
 use criterion::{black_box, criterion_group, criterion_main, Bencher, Criterion};
-use game2::material::Material;
+use game2::resource::Material;
 
 fn create_test_voxel_chunk() -> Box<VoxelChunk> {
     let mut voxel_chunk = Box::<VoxelChunk>::default();

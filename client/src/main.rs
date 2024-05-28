@@ -155,6 +155,7 @@ fn test_textures(
         },
         extension: BlockMaterial {},
     });
+    
     let dirt_texture = materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::hex("553d31").unwrap(),
@@ -296,7 +297,7 @@ fn setup_test_world(
     /*
     commands.spawn(PbrBundle {
         mesh: meshes.add(Cuboid::new(10.0, 0.01, 10.0)),
-        material: materials.add(StandardMaterial {
+        resource: materials.add(StandardMaterial {
             base_color: Color::hex("8B4513").unwrap(),
             base_color_texture: Some(asset_server.load("textures/prototype/dark/texture_01.png")),
             metallic: 1.0,

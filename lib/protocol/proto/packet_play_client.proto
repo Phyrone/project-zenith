@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "common.proto";
+package packet.play.client;
+
+message PacketPlayClient{
+  oneof payload{
+    PacketPlayClientDisconnect disconnect = 1;
+    /* World Interactions */
+    PacketPlayClientMove move = 13;
+    
+  }
+
+}
+message PacketPlayClientDisconnect{
+    string reason = 1;
+}
+
+message PacketPlayClientMove{
+  common.Position new_position = 1;
+}

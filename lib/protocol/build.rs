@@ -50,6 +50,7 @@ fn main() -> Result<(), Report<BuildError>> {
         .collect::<Vec<&str>>();
 
     parents.dedup();
+    /*
     let mut protoc = Config::new();
     protoc
         .out_dir("src/proto")
@@ -60,11 +61,59 @@ fn main() -> Result<(), Report<BuildError>> {
         .include_file("_all.rs");
 
     load_attributes(&mut protoc).change_context(BuildError)?;
-
     protoc
         .compile_protos(&proto_files, &parents)
         .change_context(BuildError)?;
+    */
+    let  tonic_builder = tonic_build::configure()
+        .out_dir("src/proto")
+        .compile_well_known_types(true)
+        .generate_default_stubs(true)
+        .include_file("_all.rs")
+        //look at begining of build.rs
+        .emit_rerun_if_changed(false)
+        .build_transport(false)
+        .build_server(true)
+        .build_client(true);
+
+    let tonic_builder = load_tonic_attributes(tonic_builder)
+        .change_context(BuildError)?;
+
+    tonic_builder
+        .compile(&proto_files, &parents)
+        .change_context(BuildError)?;
+
+
+
     Ok(())
+}
+
+fn load_tonic_attributes(
+   mut builder: tonic_build::Builder,
+) -> error_stack::Result<tonic_build::Builder,LoadAttributesError>{
+    let path = path::PathBuf::from("proto/_attributes.json");
+    let file = std::fs::File::open(path).change_context(LoadAttributesError)?;
+
+    let attributes =
+        serde_json::from_reader::<_, AttributesConfig>(file).change_context(LoadAttributesError)?;
+
+    for (key, value) in attributes.type_attributes {
+        for value in value {
+            builder = builder.type_attribute(key.clone(), value.clone());
+        }
+    }
+    for (key, value) in attributes.field_attributes {
+        for value in value {
+            builder = builder.field_attribute(key.clone(), value.clone());
+        }
+    }
+    for (key, value) in attributes.enum_attributes {
+        for value in value {
+            builder = builder.enum_attribute(key.clone(), value.clone());
+        }
+    }
+
+    Ok(builder)
 }
 
 fn load_attributes(config: &mut Config) -> Result<(), Report<LoadAttributesError>> {

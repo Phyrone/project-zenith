@@ -96,7 +96,7 @@ impl DerefMut for ClientChunkData {
 pub enum ChunkDataEntry {
     #[default]
     Empty,
-    //the referenced material + additional data
+    //the referenced resource + additional data
     Block(usize, Option<Box<Document>>),
 }
 

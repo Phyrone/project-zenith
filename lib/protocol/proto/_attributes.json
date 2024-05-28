@@ -1,0 +1,27 @@
+{
+  "type": {
+    ".": [
+      "#[derive(serde::Serialize,serde::Deserialize)]"
+    ]
+  },
+  "field": {
+
+    "packet.play.client.PacketPlayClient.payload.move": [
+      "#[assoc(priority = 10)]"
+    ]
+
+  },
+  "enum": {
+    "." : [
+      "#[derive(enum_assoc::Assoc)]"
+    ],
+    "packet.play.client.PacketPlayClient.payload" : [
+      "#[func(pub fn priority(&self) -> u8 { 0 })]",
+      "#[func(pub fn attachment(&self) -> bool { false })]"
+    ],
+    "packet.play.server.PacketPlayServer.payload" : [
+      "#[func(pub fn priority(&self) -> u8 { 0 })]",
+      "#[func(pub fn attachment(&self) -> bool { false })]"
+    ]
+  }
+}

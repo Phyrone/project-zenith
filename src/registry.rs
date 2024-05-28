@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -6,7 +6,7 @@ use bevy::prelude::Resource;
 use hashbrown::HashMap;
 use slab::Slab;
 
-use crate::material::ResourceKey;
+use crate::resource::ResourceKey;
 
 /// simply the marker type used when no marker is needed/set in [Registry] for convenience
 #[derive(Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
@@ -63,7 +63,7 @@ where
         Arc::make_mut(&mut self.inner)
     }
 
-    pub fn register_material(&mut self, key: ResourceKey, data: T) -> usize {
+    pub fn register(&mut self, key: ResourceKey, data: T) -> usize {
         let RegistryInner {
             id_mapper,
             key_to_data,
@@ -156,6 +156,71 @@ impl<T> Deref for RegistryEntry<T> {
 impl<T> DerefMut for RegistryEntry<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ResourceMapper {
+    pub forward: HashMap<ResourceKey, usize>,
+    pub backward: Slab<ResourceKey>,
+}
+
+impl ResourceMapper {
+    pub fn register(&mut self, key: ResourceKey) -> usize {
+        let id = self.forward.get(&key);
+        if let Some(entry) = id {
+            *entry
+        } else {
+            let id = self.backward.insert(key.clone());
+            self.forward.insert(key, id);
+            id
+        }
+    }
+}
+
+pub trait ResourceMapperOverloadWorkaraoudBecauseRustDoensntWantTo<T, C> {
+    fn contains(&self, key: T) -> bool;
+    fn get(&self, key: T) -> Option<&C>;
+    fn unregister(&mut self, key: T) -> bool;
+}
+
+impl ResourceMapperOverloadWorkaraoudBecauseRustDoensntWantTo<usize, ResourceKey>
+    for ResourceMapper
+{
+    fn contains(&self, key: usize) -> bool {
+        self.backward.contains(key)
+    }
+    fn get(&self, key: usize) -> Option<&ResourceKey> {
+        self.backward.get(key)
+    }
+
+    fn unregister(&mut self, key: usize) -> bool {
+        if !self.backward.contains(key) {
+            return false;
+        }
+        let key = self.backward.remove(key);
+        self.forward.remove(&key);
+        true
+    }
+}
+
+impl ResourceMapperOverloadWorkaraoudBecauseRustDoensntWantTo<ResourceKey, usize>
+    for ResourceMapper
+{
+    fn contains(&self, key: ResourceKey) -> bool {
+        self.forward.contains_key(&key)
+    }
+    fn get(&self, key: ResourceKey) -> Option<&usize> {
+        self.forward.get(&key)
+    }
+
+    fn unregister(&mut self, key: ResourceKey) -> bool {
+        if let Some(id) = self.forward.remove(&key) {
+            self.backward.remove(id);
+            true
+        } else {
+            false
+        }
     }
 }
 

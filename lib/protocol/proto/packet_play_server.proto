@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 
 
 message PacketPlayServer{
+  reserved 0x01 to 0x0F;
 
   oneof payload{
 
@@ -100,7 +101,9 @@ message PacketPlayServerPlaySound{
 
   //no source means the sound does not play spatial (like music)
   oneof source{
+    //play the sound at a specific position
     common.Position position = 0x01;
+    //bind the sound to an entity (support moving sounds)
     int32 entity = 0x02;
   }
 

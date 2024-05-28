@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 )]
 pub struct BlockData {
     //None = air
-    //Some = entity id to material definition
+    //Some = entity id to resource definition
     material: Option<Entity>,
 }
 

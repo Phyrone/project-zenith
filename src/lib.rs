@@ -1,19 +1,17 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
-
-pub mod bundle;
 pub mod compressible;
 pub mod humanize;
 pub mod lzw;
-pub mod material;
-pub mod mono_bundle;
+pub mod bundle;
 pub mod network;
-pub mod proto;
 pub mod protocol;
 pub mod registry;
+pub mod resource;
 pub mod storage;
 pub mod utils;
+mod kvs;
 
 pub const CHUNK_SIZE: usize = 32;
 

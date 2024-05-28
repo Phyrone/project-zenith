@@ -55,16 +55,7 @@ where
     fn compress_zstd_with_level(&self, level: i32) -> Compressed<T, ZSTD>;
 
     fn compress_snappy(&self) -> Compressed<T, SNAPPY>;
-
-    fn compress_lzma(&self) -> Compressed<T, LZMA> {
-        self.compress_lzma_with_preset(5)
-    }
-
-    fn compress_lzma_with_preset(&self, preset: u32) -> Compressed<T, LZMA>;
-
-    fn compress_lzma_extreme(&self) -> Compressed<T, LZMA> {
-        self.compress_lzma_with_preset(lzma::EXTREME_PRESET)
-    }
+    
 }
 
 impl<T> Compressible<T> for T
@@ -117,21 +108,7 @@ where
             _algorithm: std::marker::PhantomData,
         }
     }
-
-    fn compress_lzma_with_preset(&self, preset: u32) -> Compressed<T, LZMA> {
-        let bytes = bincode::serialize(self).expect("failed to serialize data");
-        let size = bytes.len();
-
-        let mut compressed = lzma::compress(&bytes, preset).unwrap();
-        compressed.shrink_to_fit();
-
-        Compressed {
-            data: compressed,
-            len: size,
-            _type: std::marker::PhantomData,
-            _algorithm: std::marker::PhantomData,
-        }
-    }
+    
 }
 
 impl<T> Compressed<T, LZ4>
@@ -150,16 +127,6 @@ where
 {
     pub fn decompress(&self) -> T {
         let bytes = zstd::bulk::decompress(&self.data, self.len).unwrap();
-        bincode::deserialize(&bytes).unwrap()
-    }
-}
-
-impl<T> Compressed<T, LZMA>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
-{
-    pub fn decompress(&self) -> T {
-        let bytes = lzma::decompress(&self.data).unwrap();
         bincode::deserialize(&bytes).unwrap()
     }
 }
@@ -231,12 +198,5 @@ mod tests {
         let decompressed = compressed.decompress();
         assert_eq!(test_struct, decompressed);
     }
-
-    #[test]
-    fn lzma_compression() {
-        let test_struct = create_test_struct();
-        let compressed = test_struct.compress_lzma_with_preset(6);
-        let decompressed = compressed.decompress();
-        assert_eq!(test_struct, decompressed);
-    }
+    
 }

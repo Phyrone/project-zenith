@@ -18,10 +18,10 @@ use block_mesh::{
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use unstructured::{Document, Unstructured};
 
 use game2::bundle::Bundle;
-use game2::mono_bundle::MonoBundle;
 use game2::registry::RegistryEntry;
 use game2::{Direction, CHUNK_SIZE};
 
@@ -33,9 +33,16 @@ const COORDS_CONFIG: &QuadCoordinateConfig = &RIGHT_HANDED_Y_UP_CONFIG;
 
 pub type GroupedVoxelMeshes = Vec<(TextureIden, Mesh)>;
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+enum VoxelMaterialType {
+    Physical,
+    SingleColor,
+    Custom(u16),
+    None,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct VoxelMaterialDescription {
-    pub category: TypeId,
     pub id: usize,
     pub metadata: Option<Box<Document>>,
 }
@@ -66,38 +73,17 @@ pub struct NoMaterial;
 impl Default for VoxelMaterialDescription {
     fn default() -> Self {
         Self {
-            category: TypeId::of::<NoMaterial>(),
+            category: VoxelMaterialType::None,
             id: AIR_MATERIAL_ID,
             metadata: None,
         }
     }
 }
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Voxel {
     material: Option<Arc<VoxelMaterialDescription>>,
     //TODO extra data
-}
-
-impl PartialEq<Self> for Voxel {
-    fn eq(&self, other: &Self) -> bool {
-        if self.material.is_none() || other.material.is_none() {
-            return false;
-        }
-        if let Some(a) = &self.material {
-            if let Some(b) = &other.material {
-                let mut hasher_1 = AHasher::default();
-                let mut hasher_2 = AHasher::default();
-                a.dyn_hash(&mut hasher_1);
-                b.dyn_hash(&mut hasher_2);
-                hasher_1.finish() == hasher_2.finish()
-            } else {
-                false
-            }
-        } else {
-            other.material.is_none()
-        }
-    }
 }
 
 impl Voxel {
@@ -374,7 +360,7 @@ pub fn voxels_grouped_greedy_mesh(
     grouped
 }
 
-/// uses a greedy quads buffer to create multiple meshes grouped by material
+/// uses a greedy quads buffer to create multiple meshes grouped by resource
 pub fn construct_grouped_mesh(
     buffer: &GreedyQuadsBuffer,
     voxel_chunk: &[Voxel],
@@ -396,7 +382,7 @@ pub fn construct_grouped_mesh(
                 let material = voxel_chunk[pos as usize]
                     .material
                     .clone()
-                    .expect("voxel material is not set");
+                    .expect("voxel resource is not set");
                 (
                     TextureIden {
                         material,
@@ -409,7 +395,7 @@ pub fn construct_grouped_mesh(
         })
         .collect::<Vec<_>>();
 
-    //create meshes grouped by material
+    //create meshes grouped by resource
     #[derive(Default)]
     struct MeshPrep {
         indices: Vec<u32>,
@@ -502,12 +488,12 @@ pub fn quads_buffer_to_mesh(
             positions.extend_from_slice(&face.quad_mesh_positions(&quad, 1.0 / resolution as f32));
 
             normals.extend_from_slice(&face.quad_mesh_normals());
-            //TODO (insert material data)
+            //TODO (insert resource data)
             let pos = quad.minimum;
             let _pos = pos[0] + pos[1] * size as u32 + pos[2] * size as u32 * size as u32;
 
             //let texture_id = 0;
-            //TODO get texture id for material
+            //TODO get texture id for resource
 
             //data.extend_from_slice(&[texture_id; 4]);
         }

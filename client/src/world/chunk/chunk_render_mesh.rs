@@ -46,7 +46,9 @@ pub struct VoxelChunkSurface {
     pub iden: TextureIden,
 }
 
-impl VoxelChunkSurface {}
+impl VoxelChunkSurface {
+    
+}
 
 impl Deref for VoxelChunkSurface {
     type Target = TextureIden;
@@ -56,7 +58,7 @@ impl Deref for VoxelChunkSurface {
     }
 }
 
-//similar to PbrBundle but without material but an identifier to gain the material later
+//similar to PbrBundle but without resource but an identifier to gain the resource later
 #[derive(Bundle, Clone, Default)]
 pub struct ChunkSurfaceBundle {
     pub surface: VoxelChunkSurface,
