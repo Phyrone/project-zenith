@@ -1,6 +1,6 @@
 [package]
 name = "protocol"
-version = "0.1.0"
+version = "0.0.1713974630-INDEV"
 edition = "2021"
 
 [dependencies]
@@ -21,7 +21,7 @@ integer-encoding = { version = "4.0.0", features = ["tokio", "tokio_async"] }
 ls-qpack = "0.1.4"
 prost = { version = "0.12.6", features = ["prost-derive"] }
 quinn = { version = "0.11.0", features = ["ring", "futures-io", "async-std", "async-io"] }
-rcgen = { version = "0.13.1", features = ["zeroize"] }
+rcgen = { version = "0.13.1", features = ["zeroize", "x509-parser"] }
 ring = { version = "0.17.8", features = ["std"] }
 rustls = { version = "0.23.7", features = ["ring", "std"] }
 serde = { version = "1.0.194", features = ["derive", "rc", "alloc"] }

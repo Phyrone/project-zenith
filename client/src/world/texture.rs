@@ -1,6 +1,5 @@
 use std::any::Any;
 
-use crunch::{pack, Item, PackedItem, Rect, Rotation};
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImage};
 use rayon::prelude::*;

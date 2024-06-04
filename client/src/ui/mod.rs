@@ -2,9 +2,6 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowResized};
 use bevy::winit::WinitWindows;
-use http::header::CONTENT_TYPE;
-use wry::http::Request;
-use wry::{http, WebView, WebViewBuilder};
 
 #[derive(Debug, Resource)]
 pub struct WebUISource {

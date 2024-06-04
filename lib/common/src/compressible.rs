@@ -33,10 +33,6 @@ pub struct LZ4;
 
 pub struct ZSTD;
 
-pub struct SNAPPY;
-
-pub struct LZMA;
-
 //TODO add error return types
 pub trait Compressible<T>
 where
@@ -53,9 +49,6 @@ where
     }
 
     fn compress_zstd_with_level(&self, level: i32) -> Compressed<T, ZSTD>;
-
-    fn compress_snappy(&self) -> Compressed<T, SNAPPY>;
-    
 }
 
 impl<T> Compressible<T> for T
@@ -93,22 +86,6 @@ where
             _algorithm: std::marker::PhantomData,
         }
     }
-
-    fn compress_snappy(&self) -> Compressed<T, SNAPPY> {
-        let bytes = bincode::serialize(self).expect("failed to serialize data");
-        let size = bytes.len();
-
-        let mut compressed = snap::raw::Encoder::new().compress_vec(&bytes).unwrap();
-        compressed.shrink_to_fit();
-
-        Compressed {
-            data: compressed,
-            len: size,
-            _type: std::marker::PhantomData,
-            _algorithm: std::marker::PhantomData,
-        }
-    }
-    
 }
 
 impl<T> Compressed<T, LZ4>
@@ -128,18 +105,6 @@ where
     pub fn decompress(&self) -> T {
         let bytes = zstd::bulk::decompress(&self.data, self.len).unwrap();
         bincode::deserialize(&bytes).unwrap()
-    }
-}
-
-impl<T> Compressed<T, SNAPPY>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
-{
-    pub fn decompress(&self) -> T {
-        let decompressed = snap::raw::Decoder::new()
-            .decompress_vec(&self.data)
-            .unwrap();
-        bincode::deserialize(&decompressed).unwrap()
     }
 }
 
@@ -190,13 +155,4 @@ mod tests {
         let decompressed = compressed.decompress();
         assert_eq!(test_struct, decompressed);
     }
-
-    #[test]
-    fn snappy_compression() {
-        let test_struct = create_test_struct();
-        let compressed = test_struct.compress_snappy();
-        let decompressed = compressed.decompress();
-        assert_eq!(test_struct, decompressed);
-    }
-    
 }

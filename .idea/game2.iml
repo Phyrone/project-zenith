@@ -14,6 +14,9 @@
       <sourceFolder url="file://$MODULE_DIR$/lib/protocol/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib/packet-set/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib/serde-h/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/common/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/mesher/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/mesher/benches" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

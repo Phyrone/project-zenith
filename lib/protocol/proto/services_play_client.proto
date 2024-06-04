@@ -1,7 +1,0 @@
-syntax = "proto3";
-package service.play.client;
-import "common.proto";
-import "chunk.proto";
-import "google/protobuf/empty.proto";
-
-

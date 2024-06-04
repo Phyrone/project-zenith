@@ -113,10 +113,7 @@ mod test {
             humanize_memory(std::mem::size_of::<BlockData>())
         );
     }
-    
-    #[test]
-    pub fn test_kv(){
 
-        
-    }
+    #[test]
+    pub fn test_kv() {}
 }

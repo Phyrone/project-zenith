@@ -1,29 +1,16 @@
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::sync::Arc;
 
 use bevy::prelude::{App, Component, Plugin, SystemSet};
 
-use game2::Direction;
-
-use crate::world::chunk::voxel::VoxelMaterialDescription;
-use crate::world::texture::VoxelSurfaceTexture;
-
-pub mod chunk_data;
-pub mod chunk_render_mesh;
-pub mod grid;
-//pub mod voxel2;
-mod chunk_apply_block_materials;
 pub mod voxel;
+mod voxel_render;
 
 #[derive(Default, Debug)]
 pub struct ClientWorldChunksPlugin;
 
 impl Plugin for ClientWorldChunksPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((grid::ChunkGridPlugin, chunk_data::ChunkDataPlugin));
-        app.add_plugins(chunk_render_mesh::ChunkRenderMeshPlugin);
-    }
+    fn build(&self, app: &mut App) {}
 }
 
 /// Describes a chunk and its position into the RederedWorld
@@ -39,22 +26,4 @@ pub struct VoxelWorldFixedChunkPosition {
     pub x: i64,
     pub y: i64,
     pub z: i64,
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, SystemSet)]
-pub enum ChunkRenderStage {
-    // Determine block states, position chunks etc.
-    ChunkPreData,
-
-    // Voxels are built from the block states
-    ConstructMesh,
-
-    //the constructed voxels are now used to build the mesh
-    ApplyMaterials,
-}
-
-#[derive(Debug, Clone, Default, Hash, Eq, PartialEq)]
-pub struct TextureIden {
-    pub material: Arc<VoxelMaterialDescription>,
-    pub direction: Direction,
 }

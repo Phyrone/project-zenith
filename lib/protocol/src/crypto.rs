@@ -122,35 +122,98 @@ impl ResolvesClientCert for AClientCertResolver {
     }
 }
 
-pub mod test {
+mod utils {
+    use error_stack::ResultExt;
     use rcgen::{
-        CertificateParams, CertificateSigningRequest, CertifiedKey, DnType, KeyPair, PKCS_ED25519,
+        Certificate, CertificateParams, CertificateSigningRequest, DnType, ExtendedKeyUsagePurpose,
+        IsCa, KeyPair, OtherNameValue, SanType, SerialNumber, PKCS_ED25519,
     };
-    use time::OffsetDateTime;
+    use thiserror::Error;
+
+    const SESSION_CERTIFICATE_NAME: &str = "p-zenith-account-ownership-attestation";
+    const ALT_NAME_TYPE: [u64; 2] = [0x000815, 0x42];
+
+    #[derive(Debug, Error)]
+    pub enum CreateSessionError {
+        #[error("could not generate keypair")]
+        GenerateKeyPair,
+
+        #[error("could not self sign certificate")]
+        SelfSignCertificate,
+
+        #[error("could not sign certificate")]
+        SignCertificate,
+
+        #[error("could not create sign request")]
+        CreateRequestError,
+    }
+
+    pub struct SessionCreation {
+        keypair: KeyPair,
+        certificate: CertificateParams,
+    }
+
+    impl SessionCreation {
+        pub fn new(account_id: u64) -> error_stack::Result<Self, CreateSessionError> {
+            let keypair = KeyPair::generate_for(&PKCS_ED25519)
+                .change_context(CreateSessionError::GenerateKeyPair)?;
+            let mut params = CertificateParams::new(vec![])
+                .expect("cannot fail since no alt params are provided");
+            params
+                .distinguished_name
+                .push(DnType::CommonName, SESSION_CERTIFICATE_NAME);
+            params.is_ca = IsCa::NoCa;
+            params.not_after = time::OffsetDateTime::now_utc() + time::Duration::minutes(15);
+            params.not_before = time::OffsetDateTime::now_utc();
+            params.use_authority_key_identifier_extension = true;
+            //TODO to something with the serial number
+            params.serial_number = Some(SerialNumber::from_slice(&[0xFE, 0xED, 0xBE, 0xEF]));
+            params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ClientAuth];
+            params.subject_alt_names = vec![SanType::OtherName((
+                ALT_NAME_TYPE.to_vec(),
+                OtherNameValue::Utf8String("".to_string()),
+            ))];
+
+            Ok(Self {
+                keypair,
+                certificate: params,
+            })
+        }
+
+        pub fn to_offline_session(
+            mut self,
+        ) -> error_stack::Result<(Certificate, KeyPair), CreateSessionError> {
+            self.certificate.not_after =
+                time::OffsetDateTime::now_utc() + time::Duration::minutes(15);
+            self.certificate.not_before = time::OffsetDateTime::now_utc();
+
+            let certificate = self
+                .certificate
+                .self_signed(&self.keypair)
+                .change_context(CreateSessionError::SelfSignCertificate)?;
+            Ok((certificate, self.keypair))
+        }
+        pub fn create_sign_request(
+            &self,
+        ) -> error_stack::Result<CertificateSigningRequest, CreateSessionError> {
+            self.certificate
+                .serialize_request(&self.keypair)
+                .change_context(CreateSessionError::SelfSignCertificate)
+        }
+    }
+}
+
+pub mod test {
+    use crate::crypto::utils::SessionCreation;
 
     #[tokio::test]
     async fn test_server() {
-        let CertifiedKey {
-            cert: ca_cert,
-            key_pair: ca_key_pair,
-        } = rcgen::generate_simple_self_signed(vec!["localhost".to_string()]).unwrap();
-
-        let keypair = KeyPair::generate_for(&PKCS_ED25519).expect("Failed to generate keypair");
-        println!("{}", keypair.serialize_pem());
-        let mut cert = CertificateParams::default();
-        let mut distinguished_name = rcgen::DistinguishedName::new();
-        distinguished_name.push(DnType::CommonName, "client:1iotlogci4ah0");
-        distinguished_name.push(DnType::OrganizationName, "private");
-        cert.distinguished_name = distinguished_name;
-        cert.not_after = OffsetDateTime::now_utc() + time::Duration::hours(24);
-        cert.not_before = OffsetDateTime::now_utc();
-
-        //cert.subject_alt_names = vec![SanType::URI(Ia5String::from_str("user://1A7C5836-303C-446F-9395-90A0E5C60D2D").expect("Failed to parse URI"))];
-        let cert = cert
-            .signed_by(&keypair, &ca_cert, &ca_key_pair)
-            .expect("Failed to sign certificate");
-        println!("{}", cert.pem());
-        println!("{}", ca_cert.pem());
+        let session_creation = SessionCreation::new(13).expect("could not create session");
+        let (certificate, key) = session_creation
+            .to_offline_session()
+            .expect("could not create offline session");
+        println!("{:?}", certificate.pem());
+        println!("{:?}", key.serialize_pem());
 
         //let server = quinn::Endpoint::server()
     }

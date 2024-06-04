@@ -7,7 +7,6 @@ import "packet_lobby_client.proto";
 import "packet_lobby_server.proto";
 
 
-
 service ServiceLobbyServerlist{
   rpc ServerStatus(packet.lobby.client.PacketLobbyClientSatus) returns (packet.lobby.server.PacketLobbyServerStatusResponse);
 }

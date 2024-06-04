@@ -65,7 +65,7 @@ fn main() -> Result<(), Report<BuildError>> {
         .compile_protos(&proto_files, &parents)
         .change_context(BuildError)?;
     */
-    let  tonic_builder = tonic_build::configure()
+    let tonic_builder = tonic_build::configure()
         .out_dir("src/proto")
         .compile_well_known_types(true)
         .generate_default_stubs(true)
@@ -76,21 +76,18 @@ fn main() -> Result<(), Report<BuildError>> {
         .build_server(true)
         .build_client(true);
 
-    let tonic_builder = load_tonic_attributes(tonic_builder)
-        .change_context(BuildError)?;
+    let tonic_builder = load_tonic_attributes(tonic_builder).change_context(BuildError)?;
 
     tonic_builder
         .compile(&proto_files, &parents)
         .change_context(BuildError)?;
 
-
-
     Ok(())
 }
 
 fn load_tonic_attributes(
-   mut builder: tonic_build::Builder,
-) -> error_stack::Result<tonic_build::Builder,LoadAttributesError>{
+    mut builder: tonic_build::Builder,
+) -> error_stack::Result<tonic_build::Builder, LoadAttributesError> {
     let path = path::PathBuf::from("proto/_attributes.json");
     let file = std::fs::File::open(path).change_context(LoadAttributesError)?;
 
