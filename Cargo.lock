@@ -1005,6 +1005,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_flycam"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7118a5b89b335e6573d67bce01c9b7061fe618a295db6254782c2cae00635bd"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_gilrs"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2148,6 +2157,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_atmosphere",
  "bevy_egui",
+ "bevy_flycam",
  "bimap",
  "bincode",
  "bitflags 2.5.0",
@@ -2167,6 +2177,7 @@ dependencies = [
  "image 0.25.1",
  "itertools 0.13.0",
  "log 0.4.21",
+ "mesher",
  "rayon",
  "rclite",
  "rstest 0.20.0",
@@ -4496,15 +4507,14 @@ name = "mesher"
 version = "0.0.1713974630-INDEV"
 dependencies = [
  "bevy",
- "bitflags 2.5.0",
  "bitvec",
  "criterion",
  "hashbrown 0.14.5",
- "num-traits",
  "rayon",
  "rstest 0.21.0",
  "serde",
  "serde-big-array",
+ "smallvec",
  "wide",
 ]
 
