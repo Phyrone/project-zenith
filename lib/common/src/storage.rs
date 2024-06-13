@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::ops::{Not, Range};
+use bevy::prelude::Component;
 
 use huffman_coding::HuffmanWriter;
 use itertools::Itertools;
@@ -14,7 +15,7 @@ pub struct StorageCompressed;
 
 pub struct StorageUncompressed;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,Component)]
 pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync> {
     palette: Vec<ITEM>,
     data: PackedVec<usize>,

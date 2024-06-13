@@ -1,13 +1,13 @@
 [package]
 name = "client"
-version = "0.0.1713974630-INDEV"
+version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bevy = { version = "0.13.2", features = ["async-io", "multi-threaded", "webp"] }
-clap = { version = "4.4.12", features = ["cargo", "derive", "env", "string", "unicode"] }
+clap = { version = "4.5.7", features = ["cargo", "derive", "env", "string", "unicode"] }
 error-stack = "0.4.1"
 fast_log = { version = "1.6.10", features = ["zip"] }
 log = { version = "0.4.20", features = ["serde"] }
@@ -38,7 +38,7 @@ futures-polling = "0.1.1"
 #http = "1.1.0"
 image = { version = "0.25.1", features = ["avif", "rayon"] }
 tempfile = "3.10.1"
-bevy_atmosphere = "0.9.0"
+bevy_atmosphere = "0.9.1"
 discord-rpc-client = "0.4.0"
 itertools = "0.13.0"
 hashbrown = "0.14.3"
@@ -52,16 +52,18 @@ cached = { version = "0.51.3", features = ["wasm", "directories"] }
 arrayvec = { version = "0.7.4", features = ["serde"] }
 smallvec = { version = "1.13.2", features = ["union", "serde"] }
 bevy_flycam = "0.13.0"
-mesher = { version = "0.0.1713974630-INDEV", path = "../lib/mesher" }
+mesher = { path = "../lib/mesher" }
+bevy_replicon = "0.26.2"
+hex = "0.4.3"
 
 
 [dev-dependencies]
-rstest = "0.20.0"
+rstest = "0.21.0"
 criterion = { version = "0.5.1", features = ["tokio", "html_reports"] }
 
 [lib]
 path = "src/lib.rs"
 
 [features]
-default  = ["debug-dyn"]
+default = ["debug-dyn"]
 debug-dyn = ["bevy/dynamic_linking"]

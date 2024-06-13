@@ -1,6 +1,6 @@
 [package]
 name = "mesher"
-version = "0.0.1713974630-INDEV"
+version = "0.0.1713974630"
 edition = "2021"
 
 [dependencies]

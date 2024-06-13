@@ -15,14 +15,15 @@ fn main() -> Result<(), Report<BuildError>> {
 
     let mut proto_files = Vec::new();
     let filewalk = walkdir::WalkDir::new("proto")
-        .max_depth(1)
+        .same_file_system(true)
+        .follow_root_links(false)
+        .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok());
 
     for file in filewalk {
         if file.metadata().change_context(BuildError)?.is_file() {
             let path = std::fs::canonicalize(file.path()).change_context(BuildError)?;
-
             let path_name = path
                 .to_str()
                 .expect("Failed to convert path to string for proto file");

@@ -112,7 +112,6 @@ pub struct GreedyQuad {
 
 impl GreedyQuad {
     pub fn vertex_positions(&self, scaling: f32) -> [[f32; 3]; 4] {
-        println!("positions for quad: {:?}", &self);
         let (x, y, z) = match self.direction {
             FaceDirection::ZPos => (self.x as f32, self.y as f32, self.z as f32 + 1f32),
             FaceDirection::YPos => (self.x as f32, self.y as f32 + 1f32, self.z as f32),

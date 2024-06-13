@@ -1,0 +1,35 @@
+# requirements:
+
+- [ ] Multiple transport protocols
+    - [ ] QUIC
+    - [ ] Local
+
+- [ ] Client Authentification with untrusted server
+    - [ ] mTLS on QUIC transport
+    - [ ] Methods for other transports (except local)
+- [ ] Server Authentification
+- Multiplex:
+    - [ ] 0..255 Replicon Channels (Ordered/Unordered/Unreliable) for Replicon -> BI & UNI & DATAGRAM
+    - [ ] RPC Calls (H3->GRPC?) -> BI
+    - [ ] Large Data Transfer -> BI/UNI?
+    - [ ] Side Events (H3?->PUB/SUB) -> BI/UNI?
+        - Chat Messages
+        - Join/Leave notifications
+        - Scoreboard updates
+        - Broadcasts
+        - and more
+    - [ ] VOIP -> DATAGRAM
+    - [ ] Encoder Stream -> BI/UNI?
+- Datagram IDS
+    - 0 Reserved
+    - 1 VOIP
+    - 2..31 Reserved
+    - 32..288 Replicon (Ureliable)
+- Uni IDS
+    - 0 Single Packet
+    - 1..31 Reserved
+    - 32..288 Replicon (Unordered Channel Push)
+- Bi IDS
+    - 0 RPC
+    - 1..31 Reserved
+    - 32..288 Replicon (Ordered Channel Open)

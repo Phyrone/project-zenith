@@ -296,6 +296,7 @@ impl VoxelCubeOcclusionMatrix16 {
         } else {
             0
         };
+        
         let axis = match face_self {
             FaceDirection::XNeg | FaceDirection::XPos => &self.y_axis,
             FaceDirection::YNeg | FaceDirection::YPos => &self.z_axis,

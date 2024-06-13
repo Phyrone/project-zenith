@@ -1,6 +1,6 @@
 [package]
 name = "common"
-version = "0.0.1713974630-INDEV"
+version = "0.0.1713974630"
 edition = "2021"
 
 [dependencies]
@@ -37,3 +37,4 @@ bitcode = { version = "0.6.0", features = ["serde"] }
 downcast-rs = "1.2.1"
 quinn = { version = "0.11.0", features = ["ring","runtime-tokio","rustls"] }
 tokio = { version = "1.37.0", features = ["full"] }
+bitvec = "1.0.1"

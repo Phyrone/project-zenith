@@ -1,8 +1,12 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use bevy::prelude::{App, Component, Plugin, SystemSet};
+use bevy::prelude::{App, Component, Plugin, Reflect, SystemSet};
 
+use common::CHUNK_VOLUME;
+use common::storage::Storage;
+
+mod new_voxel;
 pub mod voxel;
 mod voxel_render;
 
@@ -21,9 +25,16 @@ impl Plugin for ClientWorldChunksPlugin {
 /// that means x,y,z of [VoxelWorldFixedChunkPosition] are likely to change and systems should take it into account
 /// render chunks to not care about dimensions
 /// render chunks can directly translated into Transforms by multiplying the x,y,z with the chunk size
-#[derive(Component, Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Component, Debug, Default, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Reflect)]
 pub struct VoxelWorldFixedChunkPosition {
     pub x: i64,
     pub y: i64,
     pub z: i64,
 }
+
+#[derive(Component, Debug, Default, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Reflect)]
+pub struct SurfaceTextureIden {
+    pub id: usize,
+}
+
+pub type VoxelSurfaceData = Storage<CHUNK_VOLUME, Option<usize>>;

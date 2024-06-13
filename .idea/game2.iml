@@ -17,6 +17,8 @@
       <sourceFolder url="file://$MODULE_DIR$/lib/common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib/mesher/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib/mesher/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/server/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/protocol/experiments/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

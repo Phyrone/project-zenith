@@ -1,5 +1,22 @@
 syntax = "proto3";
 
+enum CompressionAlgorithm{
+  COMPRESSION_NONE = 0x00;
+  COMPRESSION_LZ4 = 0x01;
+  reserved 0x02;
+  //COMPRESSION_ZSTD = 0x02;
+  reserved 0x03;
+  //COMPRESSION_BROTLI = 0x03;
+
+}
+
+message SemanticVersion{
+  uint32 major = 0x01;
+  uint32 minor = 0x02;
+  uint64 patch = 0x03;
+  optional string pre_release = 0x10;
+}
+
 enum DisconnectReason{
   //Client or server initiated disconnects
   // Server: The server is shutting down
@@ -37,12 +54,18 @@ enum DisconnectReason{
 enum StreamResetReason{
   RESET_REASON_UNKNOWN = 0;
 
+
+
+
   //The common case of some policy violation
   RESET_REASON_POLICY_VIOLATION = 0xE0;
   RESET_REASON_POLICY_VIOLATION_PACKET_TOO_LARGE = 0xE1;
   RESET_REASON_POLICY_VIOLATION_RATE_LIMIT = 0xE2;
   RESET_REASON_POLICY_VIOLATION_INVALID_PACKET = 0xE3;
 
+  //when a not idempotent operation is attempted on a 0rtt channel
+  //May only occur in lobby state with 0rtt enabled
+  RESET_REASON_QUIC_0RTT_NOT_ALLOWED_HERE = 0xEC;
 }
 
 /* === Common === */

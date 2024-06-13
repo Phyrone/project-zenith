@@ -1,0 +1,9 @@
+syntax = "proto3";
+import "common.proto";
+package play.client.packet;
+
+message PacketPlayClient{
+  oneof payload{
+    bytes sync = 0x01;
+  }
+}
