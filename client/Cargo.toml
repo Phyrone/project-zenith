@@ -55,6 +55,7 @@ bevy_flycam = "0.13.0"
 mesher = { path = "../lib/mesher" }
 bevy_replicon = "0.26.2"
 hex = "0.4.3"
+blake3 = { version = "1.5", features = [ "pure" ] }
 
 
 [dev-dependencies]

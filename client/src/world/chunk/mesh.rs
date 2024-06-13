@@ -1,19 +1,20 @@
 use std::sync::Mutex;
 
-use bevy::math::Vec3A;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
 use hashbrown::HashMap;
 use rayon::prelude::*;
+use common::CHUNK_SIZE;
 
 use mesher::b32::{build_mesh32, VoxelCubeOcclusionMatrix32};
 use mesher::meshing::quads_to_mesh;
 
-use crate::world::chunk::{SurfaceTextureIden, VoxelSurfaceData};
+use crate::world::chunk::{SurfaceTextureIden, VoxelCubeStore};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, SystemSet)]
 pub enum VoxelMeshStage {
+    BuildOcclusionMatrix,
     CreateMesh,
 }
 
@@ -21,74 +22,85 @@ pub struct VoxelMeshPlugin;
 
 impl Plugin for VoxelMeshPlugin {
     fn build(&self, app: &mut App) {
+        app.configure_sets(Update,VoxelMeshStage::CreateMesh.after(VoxelMeshStage::BuildOcclusionMatrix));
         app.add_systems(
             Update,
-            build_meshes_system.in_set(VoxelMeshStage::CreateMesh),
+            (
+                sync_static_neighbors.in_set(VoxelMeshStage::BuildOcclusionMatrix),
+                build_meshes_system.in_set(VoxelMeshStage::CreateMesh),
+            ),
         );
     }
 }
 
+fn sync_static_neighbors(
+    
+) {
+    
+}
 
+#[allow(clippy::type_complexity)]
 fn build_meshes_system(
     commands: ParallelCommands,
     mesh_handler: ResMut<Assets<Mesh>>,
     voxel_chunks: Query<
-        (Entity, &VoxelCubeOcclusionMatrix32, &VoxelSurfaceData, &Children),
-        Changed<VoxelCubeOcclusionMatrix32>,
+        (
+            Entity,
+            &VoxelCubeOcclusionMatrix32,
+            &VoxelCubeStore,
+            &Children,
+        ),
+        (Or<(Changed<VoxelCubeOcclusionMatrix32>, Changed<VoxelCubeStore>)>),
     >,
-    surface_entities: Query<(Entity, &SurfaceTextureIden), With<SurfaceTextureIden>>,
+    surface_entities: Query<(Entity, &SurfaceTextureIden), With<Parent>>,
 ) {
     let mesh_handler = Mutex::new(mesh_handler);
 
     voxel_chunks
         .par_iter()
         .for_each(|(kube_entity, occlusion_matrix, textures, children)| {
-            let outcome = build_mesh32(occlusion_matrix, |x, y, z, face|
-            Some(1_usize),
-            );
+            let outcome = build_mesh32(occlusion_matrix, |x, y, z, face| {
+                let index = x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE;
+                //TODO: per direction textures
+                textures.get(index).to_owned()
+            });
 
             let meshes = outcome
                 .into_par_iter()
                 .flat_map(|(key, quads)| {
                     let mesh = quads_to_mesh(&quads, 1.0, RenderAssetUsages::RENDER_WORLD);
-                    let bounding_box = mesh.compute_aabb();
-                    if let Some(bounding_box) = bounding_box {
-                        Some((
-                            key,
-                            mesh,
-                            bounding_box
-                        ))
-                    } else {
-                        None
-                    }
+                    //build aabb for frustum culling
+                    mesh.compute_aabb()
+                        .map(|bounding_box| (key, mesh, bounding_box))
                 })
                 .collect::<Vec<_>>();
 
             let mut mesh_handler = mesh_handler.lock().expect("Failed to lock mesh handler");
             let meshes = meshes
                 .into_iter()
-                .map(|(key, mesh,aabb)| (key, mesh_handler.add(mesh),aabb))
+                .map(|(key, mesh, aabb)| (key, mesh_handler.add(mesh), aabb))
                 .collect::<Vec<_>>();
             drop(mesh_handler);
             let mut surfaces = children
                 .into_iter()
                 .flat_map(|child| surface_entities.get(*child))
-                .map(|(entity, surface_id)| (surface_id.id, entity))
+                .map(|(entity, surface_id)| (surface_id, entity))
                 .collect::<HashMap<_, _>>();
 
             commands.command_scope(|mut command| {
-                for (key, mesh,aabb) in meshes {
-                    let entity = surfaces.remove(&key);
+                for (surface_iden, mesh, aabb) in meshes {
+                    let entity = surfaces.remove(&surface_iden);
                     if let Some(surface_entity) = entity {
-                        command.entity(surface_entity).insert((mesh,aabb));
+                        command.entity(surface_entity).insert((mesh, aabb));
                     } else {
-                        let surface_id = SurfaceTextureIden { id: key };
-                        command.spawn(ChunkSurfaceBundle {
-                            surface_id,
-                            mesh,
-                            aabb,
-                            ..Default::default()
-                        }).set_parent(kube_entity);
+                        command
+                            .spawn(ChunkSurfaceBundle {
+                                surface_iden,
+                                mesh,
+                                aabb,
+                                ..Default::default()
+                            })
+                            .set_parent(kube_entity);
                     }
                 }
                 for (_, entity) in surfaces {
@@ -100,7 +112,7 @@ fn build_meshes_system(
 
 #[derive(Bundle, Default)]
 pub struct ChunkSurfaceBundle {
-    pub surface_id: SurfaceTextureIden,
+    pub surface_iden: SurfaceTextureIden,
     pub mesh: Handle<Mesh>,
     pub aabb: Aabb,
     //https://docs.rs/bevy/latest/bevy/render/prelude/struct.SpatialBundle.html
@@ -110,4 +122,3 @@ pub struct ChunkSurfaceBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
 }
-

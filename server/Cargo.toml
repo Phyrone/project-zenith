@@ -12,3 +12,4 @@ hex = "0.4.3"
 serde = { version = "1.0.203", features = ["derive", "alloc"] }
 tokio = { version = "1.38.0", features = ["full"] }
 worley-noise = { version = "3.7.2", features = ["getrandom"] }
+blake3 = { version = "1.5", features = [ "pure" ] }

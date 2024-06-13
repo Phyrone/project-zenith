@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
@@ -7,8 +9,8 @@ use bevy_atmosphere::prelude::{AtmosphereCamera, AtmospherePlugin, AtmosphereSet
 use bevy_flycam::{FlyCam, PlayerPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use client::transport::TransportPlugin;
 use mesher::b16::{build_mesh16, VoxelCubeOcclusionMatrix16};
+use mesher::b32::{build_mesh32, VoxelCubeOcclusionMatrix32};
 use mesher::meshing::quads_to_mesh;
 
 #[bevy_main]
@@ -27,7 +29,6 @@ fn main() {
         ))
         .add_plugins(AtmospherePlugin)
         .add_plugins(PlayerPlugin)
-        .add_plugins(TransportPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .insert_resource(WireframeConfig {
             // The global wireframe config enables drawing of wireframes on every mesh,
@@ -89,7 +90,7 @@ fn spawn_test_chunk(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let texture = asset_server.load("textures/dirt.webp");
+    let texture = asset_server.load("textures/grass.webp");
     let texture = materials.add(StandardMaterial {
         base_color_texture: Some(texture),
         metallic: 0.0,
@@ -97,28 +98,30 @@ fn spawn_test_chunk(
         ..Default::default()
     });
 
-    for x in 0..16 {
-        for z in 0..10 {
-            let mut matrix = VoxelCubeOcclusionMatrix16::new();
-            for x in 0..16 {
+    for x in -32..32 {
+        for z in -32..32 {
+            let mut matrix = VoxelCubeOcclusionMatrix32::new();
+            for x in 0..32 {
                 for y in 0..10 {
-                    for z in 0..16 {
+                    for z in 0..32 {
                         matrix.set_voxel(x, y, z, true);
                     }
                 }
             }
-            let quads = build_mesh16(&matrix, |x, y, z, face| Some(1));
+            let quads = build_mesh32(&matrix, |x, y, z, face| Some(1));
             let mesh = quads_to_mesh(quads.get(&1).unwrap(), 1.0, RenderAssetUsages::RENDER_WORLD);
             let mesh = meshes.add(mesh);
             commands.spawn(PbrBundle {
                 mesh,
                 material: texture.clone(),
-                transform: Transform::from_xyz(16.0 * x as f32, 0.0, 16.0 * z as f32),
+                transform: Transform::from_xyz(32.0 * x as f32, 0.0, 32.0 * z as f32),
                 ..Default::default()
             });
         }
     }
 }
+
+fn textureize() {}
 
 fn display_coords(
     mut camera_query: Query<(&Transform), With<FlyCam>>,
