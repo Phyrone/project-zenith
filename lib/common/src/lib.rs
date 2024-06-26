@@ -113,7 +113,7 @@ impl AxialRotation {
     }
 }
 
-/// Indicates the face of a block, chunk or some other block-like object.
+/// Indicates the face of a block, cubes or some other block-like object.
 #[repr(u8)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Component)]
 pub enum Direction {

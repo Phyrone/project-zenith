@@ -14,7 +14,6 @@ serde = { version = "1.0.194", features = ["derive", "rc", "alloc"] }
 slab = { version = "0.4.9", features = ["serde"] }
 smallvec = { version = "1.11.2", features = ["serde", "union", "const_new", "write"] }
 unstructured = "0.5.1"
-zstd = { version = "0.13.0", features = ["wasm", "bindgen"] }
 bevy = { version = "0.13.0", default-features = false }
 prost = { version = "0.12.3", features = ["std", "prost-derive", "default"] }
 prost-types = "0.12.3"
@@ -38,3 +37,4 @@ downcast-rs = "1.2.1"
 quinn = { version = "0.11.0", features = ["ring","runtime-tokio","rustls"] }
 tokio = { version = "1.37.0", features = ["full"] }
 bitvec = "1.0.1"
+ordered-float = { version = "4.2.0", features = [] }

@@ -7,6 +7,6 @@ pub struct WorldEnvironmnentPlugin;
 
 impl Plugin for WorldEnvironmnentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(AtmospherePlugin);
+        //app.add_plugins(AtmospherePlugin);
     }
 }

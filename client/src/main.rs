@@ -9,9 +9,12 @@ use bevy_atmosphere::prelude::{AtmosphereCamera, AtmospherePlugin, AtmosphereSet
 use bevy_flycam::{FlyCam, PlayerPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use mesher::b16::{build_mesh16, VoxelCubeOcclusionMatrix16};
+use client::world::cubes::CubeRenderWorldPlugin;
 use mesher::b32::{build_mesh32, VoxelCubeOcclusionMatrix32};
 use mesher::meshing::quads_to_mesh;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Component)]
+pub struct ClientGameState {}
 
 #[bevy_main]
 fn main() {
@@ -29,6 +32,7 @@ fn main() {
         ))
         .add_plugins(AtmospherePlugin)
         .add_plugins(PlayerPlugin)
+        .add_plugins(CubeRenderWorldPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .insert_resource(WireframeConfig {
             // The global wireframe config enables drawing of wireframes on every mesh,

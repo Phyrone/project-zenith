@@ -3,41 +3,30 @@ use std::sync::Mutex;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
+use common::CHUNK_SIZE;
 use hashbrown::HashMap;
 use rayon::prelude::*;
-use common::CHUNK_SIZE;
 
 use mesher::b32::{build_mesh32, VoxelCubeOcclusionMatrix32};
 use mesher::meshing::quads_to_mesh;
 
-use crate::world::chunk::{SurfaceTextureIden, VoxelCubeStore};
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, SystemSet)]
-pub enum VoxelMeshStage {
-    BuildOcclusionMatrix,
-    CreateMesh,
-}
+use crate::world::cubes::{ChunkRenderStage, SurfaceMaterial, VoxelCubeStore};
 
 pub struct VoxelMeshPlugin;
 
 impl Plugin for VoxelMeshPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(Update,VoxelMeshStage::CreateMesh.after(VoxelMeshStage::BuildOcclusionMatrix));
         app.add_systems(
             Update,
             (
-                sync_static_neighbors.in_set(VoxelMeshStage::BuildOcclusionMatrix),
-                build_meshes_system.in_set(VoxelMeshStage::CreateMesh),
+                sync_static_neighbors.in_set(ChunkRenderStage::ComputeOccupied),
+                build_meshes_system.in_set(ChunkRenderStage::ComputeMesh),
             ),
         );
     }
 }
 
-fn sync_static_neighbors(
-    
-) {
-    
-}
+fn sync_static_neighbors() {}
 
 #[allow(clippy::type_complexity)]
 fn build_meshes_system(
@@ -52,7 +41,7 @@ fn build_meshes_system(
         ),
         (Or<(Changed<VoxelCubeOcclusionMatrix32>, Changed<VoxelCubeStore>)>),
     >,
-    surface_entities: Query<(Entity, &SurfaceTextureIden), With<Parent>>,
+    surface_entities: Query<(Entity, &SurfaceMaterial), With<Parent>>,
 ) {
     let mesh_handler = Mutex::new(mesh_handler);
 
@@ -112,7 +101,7 @@ fn build_meshes_system(
 
 #[derive(Bundle, Default)]
 pub struct ChunkSurfaceBundle {
-    pub surface_iden: SurfaceTextureIden,
+    pub surface_iden: SurfaceMaterial,
     pub mesh: Handle<Mesh>,
     pub aabb: Aabb,
     //https://docs.rs/bevy/latest/bevy/render/prelude/struct.SpatialBundle.html

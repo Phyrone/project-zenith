@@ -62,8 +62,10 @@ fn start_server(
     replicon_server.set_running(true);
 }
 
-fn stop_server(mut replicon_server: ResMut<RepliconServer>,
-               mut event_writer: EventWriter<ServerEvent>, ) {
+fn stop_server(
+    mut replicon_server: ResMut<RepliconServer>,
+    mut event_writer: EventWriter<ServerEvent>,
+) {
     event_writer.send(ServerEvent::ClientDisconnected {
         client_id: ClientId::SERVER,
         reason: "shutdown".to_string(),

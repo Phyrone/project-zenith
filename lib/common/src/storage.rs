@@ -1,8 +1,8 @@
+use bevy::prelude::Component;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::io::{Read, Write};
 use std::ops::{Not, Range};
-use bevy::prelude::Component;
 
 use huffman_coding::HuffmanWriter;
 use itertools::Itertools;
@@ -15,7 +15,7 @@ pub struct StorageCompressed;
 
 pub struct StorageUncompressed;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,Component)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize, Component)]
 pub struct Storage<const SIZE: usize, ITEM: Debug + Clone + Eq + Ord + Send + Hash + Sync> {
     palette: Vec<ITEM>,
     data: PackedVec<usize>,
@@ -191,7 +191,7 @@ where
             .map(|palette_id| unsafe { self.palette.get_unchecked(palette_id) })
     }
 
-    ///returns the estimated memory usage in bytes of the chunk including overhead
+    ///returns the estimated memory usage in bytes of the cubes including overhead
     /// when [ITEM] contains pointers/references only the size of the pointers/references will taken into account
     pub fn memory_usage(&self) -> usize {
         let struct_size = std::mem::size_of::<Self>();

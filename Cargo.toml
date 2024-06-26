@@ -3,10 +3,6 @@ name = "game2"
 version = "0.0.1"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-
 [dev-dependencies]
 criterion2 = { version = "0.9.0", features = ["tokio", "html_reports"] }
 

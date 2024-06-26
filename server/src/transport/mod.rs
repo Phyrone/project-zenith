@@ -1,5 +1,4 @@
-use bevy::prelude::{App, Plugin};
+use bevy::prelude::Plugin;
 
 pub mod local;
-
 

@@ -11,7 +11,7 @@ criterion_group!(benches, chunk);
 criterion_main!(benches);
 
 fn chunk(criterion: &mut Criterion) {
-    criterion.bench_function("create chunk (new)", bench_empty_chunk_creation);
+    criterion.bench_function("create cubes (new)", bench_empty_chunk_creation);
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]

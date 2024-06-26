@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use crate::transport::local::LocalTransportPlugin;
 
 mod transport;
+mod core;
 
 pub const TARGET_TPS: u16 = 40;
 

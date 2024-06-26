@@ -31,7 +31,6 @@ where
 
 pub struct LZ4;
 
-pub struct ZSTD;
 
 //TODO add error return types
 pub trait Compressible<T>
@@ -40,15 +39,6 @@ where
 {
     fn compress_lz4(&self) -> Compressed<T, LZ4>;
 
-    fn compress_zstd(&self) -> Compressed<T, ZSTD> {
-        self.compress_zstd_with_level(3)
-    }
-
-    fn compress_zstd_best(&self) -> Compressed<T, ZSTD> {
-        self.compress_zstd_with_level(22)
-    }
-
-    fn compress_zstd_with_level(&self, level: i32) -> Compressed<T, ZSTD>;
 }
 
 impl<T> Compressible<T> for T
@@ -69,23 +59,7 @@ where
         }
     }
 
-    fn compress_zstd_with_level(&self, level: i32) -> Compressed<T, ZSTD> {
-        if !(0..=22).contains(&level) {
-            panic!("level must be between 0 and 22");
-        }
 
-        let bytes = bincode::serialize(self).expect("failed to serialize data");
-        let size = bytes.len();
-        let mut compressed = zstd::bulk::compress(&bytes, level).unwrap();
-        compressed.shrink_to_fit();
-
-        Compressed {
-            data: compressed,
-            len: size,
-            _type: std::marker::PhantomData,
-            _algorithm: std::marker::PhantomData,
-        }
-    }
 }
 
 impl<T> Compressed<T, LZ4>
@@ -98,15 +72,6 @@ where
     }
 }
 
-impl<T> Compressed<T, ZSTD>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
-{
-    pub fn decompress(&self) -> T {
-        let bytes = zstd::bulk::decompress(&self.data, self.len).unwrap();
-        bincode::deserialize(&bytes).unwrap()
-    }
-}
 
 #[cfg(test)]
 mod tests {

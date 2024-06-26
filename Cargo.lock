@@ -2297,6 +2297,7 @@ dependencies = [
  "huffman-coding",
  "itertools 0.13.0",
  "lz4_flex",
+ "ordered-float 4.2.0",
  "packedvec",
  "prost",
  "prost-types",
@@ -2315,7 +2316,6 @@ dependencies = [
  "tokio",
  "unstructured",
  "uuid",
- "zstd 0.13.1",
 ]
 
 [[package]]
@@ -5067,6 +5067,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ordered-float"
+version = "4.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a76df7075c7d4d01fdcb46c912dd17fba5b60c78ea480b475f2b6ab6f666584e"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "ordered-multimap"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7189,7 +7198,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bae5a28ab9d8cd21bb5300077b36a70809ff6a4ce3fc3915767c59fbdf35b7bc"
 dependencies = [
- "ordered-float",
+ "ordered-float 2.10.1",
  "pest",
  "pest_derive",
  "serde",
@@ -8332,7 +8341,6 @@ version = "2.0.10+zstd.1.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c253a4914af5bafc8fa8c86ee400827e83cf6ec01195ec1f1ed8441bf00d65aa"
 dependencies = [
- "bindgen",
  "cc",
  "pkg-config",
 ]

@@ -1,19 +1,17 @@
 use bevy::app::App;
 use bevy::prelude::*;
-use bevy::window::{PrimaryWindow, WindowResized};
-use bevy::winit::WinitWindows;
 
-#[derive(Debug, Resource)]
-pub struct WebUISource {
-    pub url: String,
+mod main_menu;
+
+#[derive(Debug)]
+pub enum ActiveUi {
+    None,
+    MainMenu,
+    Settings,
 }
 
-/// the web ui plugin borrows code from https://github.com/PawelBis/bevy_wry
-///  but has some changes to fit the needs of the game
-///  also we use the custom protocol to communicate with the webview
-#[derive(Debug, Default)]
-pub struct WebUIPlugin;
+pub struct UiPlugin;
 
-impl Plugin for WebUIPlugin {
+impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {}
 }

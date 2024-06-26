@@ -21,9 +21,10 @@ impl Plugin for ClientProtocolPlugin {
         );
         app.add_systems(
             PreUpdate,
-            receive_updates.run_if(resource_exists::<ClientLocalConnectionAgent>)
-                           .after(local_server_running)
-                           .after(local_server_stopped),
+            receive_updates
+                .run_if(resource_exists::<ClientLocalConnectionAgent>)
+                .after(local_server_running)
+                .after(local_server_stopped),
         );
         app.add_systems(
             PostUpdate,
@@ -32,13 +33,10 @@ impl Plugin for ClientProtocolPlugin {
     }
 }
 
-fn local_server_running(
-    mut replicon_client: ResMut<RepliconClient>,
-) {
+fn local_server_running(mut replicon_client: ResMut<RepliconClient>) {
     replicon_client.set_status(RepliconClientStatus::Connected {
         client_id: Some(ClientId::SERVER),
     });
-    
 }
 
 fn local_server_stopped(mut replicon_client: ResMut<RepliconClient>) {
