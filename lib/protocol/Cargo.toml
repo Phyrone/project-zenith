@@ -23,7 +23,7 @@ thiserror = "1.0.61"
 time = { version = "0.3.36", features = ["formatting", "serde", "rand", "serde-well-known", "serde-human-readable", "macros"] }
 tokio = { version = "1.37.0", features = ["full"] }
 tokio-test = "0.4.4"
-tonic = { version = "0.11.0", features = ["channel", "codegen", "prost", "zstd"], default-features = false }
+tonic = { version = "0.12.0", features = ["channel", "codegen", "prost", "zstd"], default-features = false }
 zigzag = "0.1.0"
 rand = "0.8.5"
 bitvec = "1.0.1"
